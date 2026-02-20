@@ -49,7 +49,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                         <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
                     </button>
                     <div className="flex items-center gap-4">
-                        <div className="bg-brand-orange/20 p-4 rounded-2xl text-brand-orange shadow-inner shadow-brand-orange/10">
+                        <div className="bg-primary/20 p-4 rounded-2xl text-primary shadow-inner shadow-primary/10">
                             <BarChart3 size={32} />
                         </div>
                         <div>
@@ -60,7 +60,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                                 </span>
                             </div>
                             <p className="text-slate-400 text-sm mt-2 flex items-center gap-2 font-medium">
-                                <TargetIcon size={16} className="text-brand-blue" />
+                                <TargetIcon size={16} className="text-info" />
                                 Targeting: {offer.targeting}
                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-700 mx-1" />
                                 Active since {new Date(offer.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -81,9 +81,9 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
                     { label: 'Allotted', value: offer.allotted, sub: 'cards', color: 'text-white', bg: 'bg-slate-950/40' },
-                    { label: 'Revealed', value: offer.revealed, sub: `(${Math.round(offer.revealed / offer.allotted * 100)}%)`, color: 'text-brand-blue', bg: 'bg-brand-blue/5 border-brand-blue/10' },
-                    { label: 'Redeemed', value: offer.redemptions, sub: `(${Math.round(offer.redemptions / offer.revealed * 100)}%)`, color: 'text-brand-green', bg: 'bg-brand-green/5 border-brand-green/10' },
-                    { label: 'Win Chance', value: `${offer.weight}%`, sub: 'probability', color: 'text-brand-orange', bg: 'bg-brand-orange/5 border-brand-orange/10' },
+                    { label: 'Revealed', value: offer.revealed, sub: `(${Math.round(offer.revealed / offer.allotted * 100)}%)`, color: 'text-info', bg: 'bg-info/5 border-info/10' },
+                    { label: 'Redeemed', value: offer.redemptions, sub: `(${Math.round(offer.redemptions / offer.revealed * 100)}%)`, color: 'text-success', bg: 'bg-success/5 border-success/10' },
+                    { label: 'Win Chance', value: `${offer.weight}%`, sub: 'probability', color: 'text-accent', bg: 'bg-accent/5 border-accent/10' },
                 ].map((stat, i) => (
                     <motion.div
                         key={i}
@@ -111,8 +111,8 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                     <div className="space-y-6">
                         {[
                             { step: 'Allotted', value: `${offer.allotted} Cards Created`, percent: 100, color: 'bg-slate-700/50', label: 'Step 1' },
-                            { step: 'Scratched', value: `${offer.revealed} Actually Scratched`, percent: (offer.revealed / offer.allotted) * 100, color: 'bg-brand-blue/30', label: 'Step 2' },
-                            { step: 'Redeemed', value: `${offer.redemptions} Final Conversions`, percent: (offer.redemptions / offer.allotted) * 100, color: 'bg-brand-green/30', label: 'Step 3' },
+                            { step: 'Scratched', value: `${offer.revealed} Actually Scratched`, percent: (offer.revealed / offer.allotted) * 100, color: 'bg-info/30', label: 'Step 2' },
+                            { step: 'Redeemed', value: `${offer.redemptions} Final Conversions`, percent: (offer.redemptions / offer.allotted) * 100, color: 'bg-success/30', label: 'Step 3' },
                         ].map((step, i) => (
                             <React.Fragment key={i}>
                                 <div className="relative pt-6">
@@ -145,7 +145,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                             <p className="text-xs text-slate-500 mt-1 font-medium">Activity over the last 7 days</p>
                         </div>
                         <div className="flex items-center gap-3 bg-slate-950/50 px-4 py-2 rounded-xl border border-slate-800/50">
-                            <div className="w-2.5 h-2.5 rounded-full bg-brand-orange shadow-[0_0_10px_rgba(249,115,22,0.4)]" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_10px_rgba(216,40,24,0.4)]" />
                             <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Daily Redemptions</span>
                         </div>
                     </div>
@@ -154,8 +154,8 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                             <BarChart data={offer.history}>
                                 <defs>
                                     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#f97316" stopOpacity={1} />
-                                        <stop offset="100%" stopColor="#f97316" stopOpacity={0.6} />
+                                        <stop offset="0%" stopColor="#D82818" stopOpacity={1} />
+                                        <stop offset="100%" stopColor="#D82818" stopOpacity={0.6} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} opacity={0.5} />
@@ -179,13 +179,13 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                                 <Tooltip
                                     cursor={{ fill: '#1e293b', opacity: 0.3 }}
                                     contentStyle={{
-                                        backgroundColor: '#0f172a',
+                                        backgroundColor: '#0F1115',
                                         border: '1px solid #334155',
                                         borderRadius: '16px',
                                         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
                                         padding: '12px 16px'
                                     }}
-                                    itemStyle={{ color: '#f97316', fontSize: '14px', fontWeight: '900' }}
+                                    itemStyle={{ color: '#D82818', fontSize: '14px', fontWeight: '900' }}
                                     labelStyle={{ color: '#64748b', fontSize: '10px', fontWeight: '800', marginBottom: '8px', textTransform: 'uppercase', tracking: '0.1em' }}
                                 />
                                 <Bar dataKey="value" fill="url(#barGradient)" radius={[8, 8, 4, 4]} barSize={40} />
@@ -203,13 +203,13 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                         <p className="text-xs text-slate-500 mt-2 font-medium">Detailed breakdown of customers who redeemed this offer</p>
                     </div>
                     <div className="relative w-full sm:w-80 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5 group-focus-within:text-brand-orange transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5 group-focus-within:text-primary transition-colors" />
                         <input
                             type="text"
                             placeholder="Search by name or phone..."
                             value={userSearchTerm}
                             onChange={(e) => setUserSearchTerm(e.target.value)}
-                            className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl py-3.5 pl-12 pr-6 focus:outline-none focus:border-brand-orange/50 focus:ring-4 focus:ring-brand-orange/10 text-sm text-white placeholder:text-slate-600 transition-all shadow-inner"
+                            className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl py-3.5 pl-12 pr-6 focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-sm text-white placeholder:text-slate-600 transition-all shadow-inner"
                         />
                     </div>
                 </div>
@@ -240,7 +240,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                                     >
                                         <td className="px-8 py-5">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 bg-brand-blue/10 rounded-2xl flex items-center justify-center text-brand-blue border border-brand-blue/20 group-hover:scale-110 transition-transform shadow-lg shadow-brand-blue/5">
+                                                <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform shadow-lg shadow-primary/5">
                                                     <User size={18} />
                                                 </div>
                                                 <span className="font-bold text-white tracking-tight">{util.userName}</span>
@@ -256,7 +256,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                                             </div>
                                         </td>
                                         <td className="px-8 py-5 text-right">
-                                            <span className="px-4 py-1.5 rounded-xl bg-brand-green/10 text-brand-green font-black text-[10px] uppercase tracking-widest border border-brand-green/20 shadow-lg shadow-brand-green/5">
+                                            <span className="px-4 py-1.5 rounded-xl bg-success/10 text-success font-black text-[10px] uppercase tracking-widest border border-success/20 shadow-lg shadow-success/5">
                                                 {util.status}
                                             </span>
                                         </td>

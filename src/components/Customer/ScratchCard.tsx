@@ -103,7 +103,7 @@ const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, offerHtml }) => {
 
     return (
         <div className="scratch-container w-[300px] h-[300px] rounded-2xl overflow-hidden shadow-2xl transition-all hover:scale-105">
-            <div className="scratch-result bg-white w-full h-full flex items-center justify-center p-6 border-4 border-brand-orange/20">
+            <div className="scratch-result bg-white w-full h-full flex items-center justify-center p-6 border-4 border-accent/20">
                 {offerHtml}
             </div>
             {!isRevealed && (

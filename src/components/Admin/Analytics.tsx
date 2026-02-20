@@ -28,7 +28,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: any) => (
             <div className={`p-3 rounded-xl bg-${color}/10 text-${color}`}>
                 <Icon size={24} />
             </div>
-            <span className="text-brand-green text-sm font-medium flex items-center gap-1">
+            <span className="text-success text-sm font-medium flex items-center gap-1">
                 <TrendingUp size={14} /> {trend}
             </span>
         </div>
@@ -46,7 +46,7 @@ const Analytics: React.FC = () => {
                     <p className="text-slate-400 text-sm">Performance overview of your loyalty program</p>
                 </div>
                 <div className="flex gap-3">
-                    <select className="bg-slate-900 border border-slate-800 text-sm rounded-lg px-4 py-2 outline-none focus:border-brand-orange">
+                    <select className="bg-slate-900 border border-slate-800 text-sm rounded-lg px-4 py-2 outline-none focus:border-primary">
                         <option>Last 7 Days</option>
                         <option>Last 30 Days</option>
                     </select>
@@ -54,10 +54,10 @@ const Analytics: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total Customers" value="1,284" icon={Users} color="brand-blue" trend="+12%" />
-                <StatCard title="Cards Scratched" value="856" icon={Ticket} color="brand-orange" trend="+8%" />
-                <StatCard title="Total Redemptions" value="234" icon={CheckCircle} color="brand-green" trend="+15%" />
-                <StatCard title="Redemption Rate" value="27.3%" icon={TrendingUp} color="purple-500" trend="+4%" />
+                <StatCard title="Total Customers" value="1,284" icon={Users} color="primary" trend="+12%" />
+                <StatCard title="Cards Scratched" value="856" icon={Ticket} color="accent" trend="+8%" />
+                <StatCard title="Total Redemptions" value="234" icon={CheckCircle} color="success" trend="+15%" />
+                <StatCard title="Redemption Rate" value="27.3%" icon={TrendingUp} color="info" trend="+4%" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -68,17 +68,17 @@ const Analytics: React.FC = () => {
                             <AreaChart data={MOCK_DATA}>
                                 <defs>
                                     <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="#D82818" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#D82818" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                                 <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                                 <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }}
+                                    contentStyle={{ backgroundColor: '#0F1115', border: '1px solid #2A2E36', borderRadius: '8px' }}
                                 />
-                                <Area type="monotone" dataKey="visits" stroke="#3b82f6" fillOpacity={1} fill="url(#colorVisits)" />
+                                <Area type="monotone" dataKey="visits" stroke="#D82818" fillOpacity={1} fill="url(#colorVisits)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -93,10 +93,10 @@ const Analytics: React.FC = () => {
                                 <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                                 <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }}
+                                    contentStyle={{ backgroundColor: '#0F1115', border: '1px solid #2A2E36', borderRadius: '8px' }}
                                 />
-                                <Bar dataKey="reveals" fill="#f97316" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="redemptions" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="reveals" fill="#F0D880" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="redemptions" fill="#22C55E" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>

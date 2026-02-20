@@ -62,7 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         className={`
                             w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all
                             ${activeTab === item.id
-                                ? 'bg-brand-orange text-white shadow-lg shadow-brand-orange/20'
+                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
                                 : 'hover:bg-slate-800 text-slate-400'}
                         `}
                     >

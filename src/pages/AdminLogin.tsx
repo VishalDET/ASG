@@ -22,15 +22,15 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
     };
 
     return (
-        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4">
+        <div className="min-h-screen bg-dark flex items-center justify-center p-4">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-10 rounded-3xl w-full max-w-md border-t-4 border-t-brand-orange"
+                className="glass-card p-10 rounded-3xl w-full max-w-md border-t-4 border-t-primary"
             >
                 <div className="flex justify-center mb-6">
-                    <div className="bg-brand-orange/20 p-4 rounded-2xl">
-                        <ShieldCheck className="w-10 h-10 text-brand-orange" />
+                    <div className="bg-primary/20 p-4 rounded-2xl">
+                        <ShieldCheck className="w-10 h-10 text-primary" />
                     </div>
                 </div>
 
@@ -48,7 +48,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-orange transition-all"
+                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                                 placeholder="admin@asg.com"
                                 required
                             />
@@ -63,7 +63,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-orange transition-all"
+                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                                 placeholder="••••••••"
                                 required
                             />
@@ -74,7 +74,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
 
                     <button
                         type="submit"
-                        className="w-full bg-brand-orange hover:bg-brand-orange/90 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 group transition-all shadow-lg shadow-brand-orange/20"
+                        className="w-full bg-primary hover:bg-primaryDark text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 group transition-all shadow-lg shadow-primary/20"
                     >
                         Sign In
                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -88,7 +88,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
                     </p>
                     <button
                         onClick={onLogin}
-                        className="text-brand-orange/60 hover:text-brand-orange text-xs font-bold uppercase tracking-widest transition-colors"
+                        className="text-primary/60 hover:text-primary text-xs font-bold uppercase tracking-widest transition-colors"
                     >
                         Bypass Login (Dev Only)
                     </button>

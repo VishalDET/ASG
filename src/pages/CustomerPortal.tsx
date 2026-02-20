@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import RegistrationForm from '../components/Customer/RegistrationForm';
+import UserLogin from '../layouts/CustomerLayout/UserLogin';
 import ScratchCard from '../components/Customer/ScratchCard';
 import ResultView from '../components/Customer/ResultView';
 import CustomerProfile from '../components/Customer/CustomerProfile';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User } from 'lucide-react';
+import CustomerLayout from '../layouts/CustomerLayout/CustomerLayout';
+import { Customer, CustomerRegistration } from '../types/customer';
+import { customerService } from '../services/customerService';
 
 const OFFERS = [
     { title: '10% OFF', code: 'RESTO-ASG-10', weight: 50 },
@@ -12,6 +15,8 @@ const OFFERS = [
     { title: 'Free Dessert', code: 'RESTO-SWEET', weight: 15 },
     { title: '50% OFF', code: 'RESTO-BINGO', weight: 5 },
 ];
+
+const SESSION_DURATION = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 
 const getRandomOffer = () => {
     const totalWeight = OFFERS.reduce((acc, offer) => acc + offer.weight, 0);
@@ -24,31 +29,87 @@ const getRandomOffer = () => {
 };
 
 const CustomerPortal: React.FC = () => {
-    const [step, setStep] = useState<'register' | 'scratch' | 'result' | 'profile'>('register');
-    const [customer, setCustomer] = useState<{ name: string; phone: string; visits: number } | null>(null);
+    const [step, setStep] = useState<'register' | 'login' | 'scratch' | 'result' | 'profile'>('login');
+    const [customer, setCustomer] = useState<Customer | null>(null);
     const [selectedOffer, setSelectedOffer] = useState<any>(null);
     const [history, setHistory] = useState<any[]>([]);
+    const [prefilledPhone, setPrefilledPhone] = useState('');
+    const [updateMessage, setUpdateMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    // Load mock data from localStorage to simulate persistence
+    // Load session from localStorage on mount
     useEffect(() => {
-        const savedCustomer = localStorage.getItem('asg_customer');
+        const savedSession = localStorage.getItem('asg_session');
         const savedHistory = localStorage.getItem('asg_history');
 
-        if (savedCustomer) {
-            setCustomer(JSON.parse(savedCustomer));
-            setStep('profile');
+        if (savedSession) {
+            try {
+                const { data, expiresAt } = JSON.parse(savedSession);
+                if (expiresAt > Date.now()) {
+                    setCustomer(data);
+                    setStep('profile');
+                } else {
+                    localStorage.removeItem('asg_session');
+                }
+            } catch (e) {
+                localStorage.removeItem('asg_session');
+            }
         }
         if (savedHistory) {
             setHistory(JSON.parse(savedHistory));
         }
     }, []);
 
-    const handleRegister = (data: { name: string; phone: string }) => {
-        const newCustomer = { ...data, visits: 1 };
-        setCustomer(newCustomer);
-        localStorage.setItem('asg_customer', JSON.stringify(newCustomer));
-        setSelectedOffer(getRandomOffer());
-        setStep('scratch');
+    const saveSession = (customerData: Customer) => {
+        const session = {
+            data: customerData,
+            expiresAt: Date.now() + SESSION_DURATION
+        };
+        localStorage.setItem('asg_session', JSON.stringify(session));
+    };
+
+    const handleLogin = async (phone: string) => {
+        const remoteCustomer = await customerService.getCustomerByPhone(phone);
+        if (remoteCustomer) {
+            setCustomer(remoteCustomer);
+            saveSession(remoteCustomer);
+            setStep('profile');
+            return;
+        }
+
+        // User doesn't exist -> Redirect to Registration
+        setPrefilledPhone(phone);
+        setStep('register');
+    };
+
+    const handleRegister = async (data: CustomerRegistration) => {
+        const result = await customerService.registerCustomer(data);
+        if (result.success && result.data) {
+            setCustomer(result.data);
+            saveSession(result.data);
+            setSelectedOffer(getRandomOffer());
+            setStep('scratch');
+        } else {
+            console.error('Registration failed:', result.message);
+        }
+    };
+
+    const handleUpdateProfile = async (updatedCustomer: Customer) => {
+        const result = await customerService.registerCustomer({
+            ...updatedCustomer,
+            spType: 'E'
+        });
+
+        if (result.success && result.data) {
+            setCustomer(result.data);
+            saveSession(result.data);
+            setStep('profile'); // Force stay on profile
+            setUpdateMessage({ type: 'success', text: 'Profile updated successfully!' });
+            setTimeout(() => setUpdateMessage(null), 3000);
+        } else {
+            console.error('Profile update failed:', result.message);
+            setUpdateMessage({ type: 'error', text: result.message || 'Update failed' });
+            setTimeout(() => setUpdateMessage(null), 3000);
+        }
     };
 
     const handleScratchComplete = () => {
@@ -70,25 +131,28 @@ const CustomerPortal: React.FC = () => {
     };
 
     const logout = () => {
-        localStorage.removeItem('asg_customer');
+        localStorage.removeItem('asg_session');
         localStorage.removeItem('asg_history');
         setCustomer(null);
         setHistory([]);
-        setStep('register');
+        setStep('login');
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-            {/* Profile Button (Floating) */}
-            {customer && step !== 'profile' && (
-                <button
-                    onClick={() => setStep('profile')}
-                    className="fixed top-6 right-6 bg-slate-800/80 backdrop-blur-md border border-slate-700 p-3 rounded-full text-brand-blue hover:text-white hover:bg-brand-blue transition-all z-50 shadow-xl"
-                >
-                    <User size={24} />
-                </button>
+        <CustomerLayout
+            customer={customer}
+            showProfileButton={step !== 'profile'}
+            onProfileClick={() => setStep('profile')}
+        >
+            {updateMessage && (
+                <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl border flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${updateMessage.type === 'success' ? 'bg-success/20 border-success/40 text-success' : 'bg-red-500/20 border-red-500/40 text-red-200'
+                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${updateMessage.type === 'success' ? 'bg-success/20' : 'bg-red-500/20'}`}>
+                        {updateMessage.type === 'success' ? '✓' : '✕'}
+                    </div>
+                    <p className="font-bold">{updateMessage.text}</p>
+                </div>
             )}
-
             <AnimatePresence mode="wait">
                 {step === 'register' && (
                     <motion.div
@@ -98,7 +162,24 @@ const CustomerPortal: React.FC = () => {
                         exit={{ opacity: 0, x: 20 }}
                         className="w-full max-w-md"
                     >
-                        <RegistrationForm onRegister={handleRegister} />
+                        <RegistrationForm
+                            onRegister={handleRegister}
+                            initialPhone={prefilledPhone}
+                        />
+                    </motion.div>
+                )}
+
+                {step === 'login' && (
+                    <motion.div
+                        key="login"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        className="w-full max-w-md"
+                    >
+                        <UserLogin
+                            onVerify={handleLogin}
+                        />
                     </motion.div>
                 )}
 
@@ -118,7 +199,7 @@ const CustomerPortal: React.FC = () => {
                             onComplete={handleScratchComplete}
                             offerHtml={
                                 <div className="text-center">
-                                    <span className="text-sm uppercase text-brand-orange font-bold tracking-widest block mb-2">
+                                    <span className="text-sm uppercase text-accent font-bold tracking-widest block mb-2">
                                         You Won
                                     </span>
                                     <span className="text-4xl font-black text-slate-800">{selectedOffer?.title}</span>
@@ -155,13 +236,12 @@ const CustomerPortal: React.FC = () => {
                     >
                         <CustomerProfile
                             customer={{
-                                name: customer.name,
-                                phone: customer.phone,
-                                visits: customer.visits,
+                                ...customer,
                                 offersCount: history.filter(h => h.status === 'redeemed').length
                             }}
                             history={history}
                             onClose={logout}
+                            onUpdate={handleUpdateProfile}
                             onBackToScratch={() => {
                                 setSelectedOffer(getRandomOffer());
                                 setStep('scratch');
@@ -170,11 +250,7 @@ const CustomerPortal: React.FC = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
-
-            <footer className="mt-12 text-slate-500 text-xs">
-                Powered by ASG Loyalty System • &copy; 2026
-            </footer>
-        </div>
+        </CustomerLayout>
     );
 };
 

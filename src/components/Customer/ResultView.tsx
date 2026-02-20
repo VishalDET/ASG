@@ -24,20 +24,20 @@ const ResultView: React.FC<ResultViewProps> = ({ offer, onClose }) => {
             className="glass-card p-8 rounded-3xl w-full max-w-md text-center"
         >
             <div className="flex justify-center mb-6">
-                <div className="bg-brand-green/20 p-4 rounded-full">
-                    <CheckCircle2 className="w-12 h-12 text-brand-green" />
+                <div className="bg-success/20 p-4 rounded-full">
+                    <CheckCircle2 className="w-12 h-12 text-success" />
                 </div>
             </div>
 
             <h2 className="text-2xl font-bold text-white mb-2">Congratulations!</h2>
             <p className="text-slate-400 mb-8">You've unlocked an exclusive offer</p>
 
-            <div className="bg-slate-900/80 border-2 border-dashed border-brand-orange/40 rounded-2xl p-6 mb-8">
-                <h3 className="text-3xl font-black text-brand-orange mb-4 uppercase tracking-wider">
+            <div className="bg-slate-900/80 border-2 border-dashed border-accent/40 rounded-2xl p-6 mb-8">
+                <h3 className="text-3xl font-black text-accent mb-4 uppercase tracking-wider">
                     {offer.title}
                 </h3>
                 <div className="bg-black/40 rounded-xl p-4 flex items-center justify-between gap-4">
-                    <code className="text-xl font-mono text-brand-blue font-bold tracking-widest">
+                    <code className="text-xl font-mono text-primary font-bold tracking-widest">
                         {offer.code}
                     </code>
                     <button
@@ -53,7 +53,7 @@ const ResultView: React.FC<ResultViewProps> = ({ offer, onClose }) => {
             <div className="flex gap-4">
                 <button
                     onClick={onClose}
-                    className="flex-1 bg-brand-blue hover:bg-brand-blue/90 text-white font-bold py-3 rounded-xl transition-all"
+                    className="flex-1 bg-primary hover:bg-primaryDark text-white font-bold py-3 rounded-xl transition-all"
                 >
                     Got it
                 </button>

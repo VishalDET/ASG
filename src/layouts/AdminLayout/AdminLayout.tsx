@@ -18,7 +18,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     return (
-        <div className="min-h-screen bg-[#020617] text-slate-200 flex italic-none">
+        <div className="min-h-screen bg-dark text-slate-200 flex italic-none">
             <Sidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -34,7 +34,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                     userInitial="V"
                 />
 
-                <div className="flex-1 overflow-y-auto bg-[#020617]">
+                <div className="flex-1 overflow-y-auto bg-dark">
                     {children}
                 </div>
             </main>

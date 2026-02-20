@@ -64,7 +64,7 @@ const RedemptionTerminal: React.FC = () => {
                                             value={code}
                                             onChange={(e) => setCode(e.target.value)}
                                             placeholder="ENTER CODE (e.g. RESTO-ASG-10)"
-                                            className="w-full bg-black/40 border-2 border-slate-800 rounded-2xl py-5 px-6 text-center text-2xl font-mono font-black tracking-widest text-white focus:outline-none focus:border-brand-orange transition-all placeholder:text-slate-700 uppercase"
+                                            className="w-full bg-black/40 border-2 border-slate-800 rounded-2xl py-5 px-6 text-center text-2xl font-mono font-black tracking-widest text-white focus:outline-none focus:border-primary transition-all placeholder:text-slate-700 uppercase"
                                             disabled={status === 'validating'}
                                         />
                                     </div>
@@ -78,7 +78,7 @@ const RedemptionTerminal: React.FC = () => {
                                     <button
                                         onClick={handleRedeem}
                                         disabled={!code || status === 'validating'}
-                                        className="w-full bg-brand-orange hover:bg-brand-orange/90 disabled:opacity-50 text-white font-black text-xl py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-brand-orange/20"
+                                        className="w-full bg-primary hover:bg-primaryDark disabled:opacity-50 text-white font-black text-xl py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-primary/20"
                                     >
                                         {status === 'validating' ? (
                                             <>
@@ -102,14 +102,14 @@ const RedemptionTerminal: React.FC = () => {
                                 className="text-center space-y-8"
                             >
                                 <div className="flex justify-center">
-                                    <div className="bg-brand-green/20 p-6 rounded-full">
-                                        <CheckCircle2 size={64} className="text-brand-green" />
+                                    <div className="bg-success/20 p-6 rounded-full">
+                                        <CheckCircle2 size={64} className="text-success" />
                                     </div>
                                 </div>
 
                                 <div>
                                     <h2 className="text-2xl font-bold text-white mb-1">Code Verified!</h2>
-                                    <p className="text-brand-green font-medium">Successfully marked as redeemed</p>
+                                    <p className="text-success font-medium">Successfully marked as redeemed</p>
                                 </div>
 
                                 <div className="bg-black/40 rounded-2xl p-6 text-left border border-slate-800">
@@ -117,7 +117,7 @@ const RedemptionTerminal: React.FC = () => {
                                         <span className="text-slate-500 text-sm uppercase tracking-wider font-bold">Customer</span>
                                         <span className="text-white font-medium text-right">{result?.customer}</span>
                                         <span className="text-slate-500 text-sm uppercase tracking-wider font-bold">Offer</span>
-                                        <span className="text-brand-orange font-black text-right">{result?.offer}</span>
+                                        <span className="text-accent font-black text-right">{result?.offer}</span>
                                         <span className="text-slate-500 text-sm uppercase tracking-wider font-bold">Revealed on</span>
                                         <span className="text-slate-400 text-sm text-right">{result?.revealedAt}</span>
                                     </div>
