@@ -1,54 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import CustomerPortal from './pages/CustomerPortal';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 
+const AdminRoute: React.FC<{ children: React.ReactNode; isAuthenticated: boolean }> = ({ children, isAuthenticated }) => {
+    if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
+    return <>{children}</>;
+};
+
 const App: React.FC = () => {
-    const [currentPath, setCurrentPath] = useState<string>(window.location.pathname);
     const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
 
-    // Simple router-like logic
-    React.useEffect(() => {
-        const handlePopState = () => setCurrentPath(window.location.pathname);
-        window.addEventListener('popstate', handlePopState);
-
-        // Handle login bypass via query parameter
+    // Handle initial state and bypass
+    useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         if (params.get('bypass') === 'true') {
             setIsAdminAuthenticated(true);
         }
-
-        return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
-    const navigate = (path: string) => {
-        window.history.pushState({}, '', path);
-        setCurrentPath(path);
-    };
+    return (
+        <Router>
+            <Routes>
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={
+                    <AdminLogin onLogin={() => setIsAdminAuthenticated(true)} />
+                } />
+                <Route path="/admin/*" element={
+                    <AdminRoute isAuthenticated={isAdminAuthenticated}>
+                        <AdminDashboard onLogout={() => setIsAdminAuthenticated(false)} />
+                    </AdminRoute>
+                } />
 
-    if (currentPath.startsWith('/admin')) {
-        if (!isAdminAuthenticated) {
-            return (
-                <AdminLogin
-                    onLogin={() => {
-                        setIsAdminAuthenticated(true);
-                        navigate('/admin/dashboard');
-                    }}
-                />
-            );
-        }
-        return (
-            <AdminDashboard
-                onLogout={() => {
-                    setIsAdminAuthenticated(false);
-                    navigate('/admin');
-                }}
-            />
-        );
-    }
+                {/* Customer Routes handled within CustomerPortal */}
+                <Route path="/login" element={<CustomerPortal initialStep="login" />} />
+                <Route path="/register" element={<CustomerPortal initialStep="register" />} />
+                <Route path="/portal" element={<CustomerPortal initialStep="profile" />} />
+                <Route path="/scratch" element={<CustomerPortal initialStep="scratch" />} />
+                <Route path="/result" element={<CustomerPortal initialStep="result" />} />
 
-    // Default to Customer Portal
-    return <CustomerPortal />;
+                {/* Redirects */}
+                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </Router>
+    );
 };
 
 export default App;

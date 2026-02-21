@@ -5,6 +5,7 @@ import ScratchCard from '../components/Customer/ScratchCard';
 import ResultView from '../components/Customer/ResultView';
 import CustomerProfile from '../components/Customer/CustomerProfile';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
 import CustomerLayout from '../layouts/CustomerLayout/CustomerLayout';
 import { Customer, CustomerRegistration } from '../types/customer';
 import { customerService } from '../services/customerService';
@@ -28,13 +29,24 @@ const getRandomOffer = () => {
     return OFFERS[0];
 };
 
-const CustomerPortal: React.FC = () => {
-    const [step, setStep] = useState<'register' | 'login' | 'scratch' | 'result' | 'profile'>('login');
+interface CustomerPortalProps {
+    initialStep?: 'register' | 'login' | 'scratch' | 'result' | 'profile';
+}
+
+const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [step, setStep] = useState<'register' | 'login' | 'scratch' | 'result' | 'profile'>(initialStep);
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [selectedOffer, setSelectedOffer] = useState<any>(null);
     const [history, setHistory] = useState<any[]>([]);
     const [prefilledPhone, setPrefilledPhone] = useState('');
     const [updateMessage, setUpdateMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+    // Sync state with prop if prop changes
+    useEffect(() => {
+        setStep(initialStep);
+    }, [initialStep]);
 
     // Load session from localStorage on mount
     useEffect(() => {
@@ -46,18 +58,40 @@ const CustomerPortal: React.FC = () => {
                 const { data, expiresAt } = JSON.parse(savedSession);
                 if (expiresAt > Date.now()) {
                     setCustomer(data);
-                    setStep('profile');
+
+                    // Background refresh to ensure data is not stale
+                    customerService.getCustomerByPhone(data.phone).then(freshData => {
+                        if (freshData) {
+                            setCustomer(freshData);
+                            saveSession(freshData);
+                        }
+                    });
+
+                    // Redirect to portal if valid session exists and currently on login/register
+                    if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/') {
+                        navigate('/portal', { replace: true });
+                    }
                 } else {
                     localStorage.removeItem('asg_session');
+                    if (location.pathname !== '/login' && location.pathname !== '/register') {
+                        navigate('/login', { replace: true });
+                    }
                 }
             } catch (e) {
                 localStorage.removeItem('asg_session');
+                navigate('/login', { replace: true });
+            }
+        } else {
+            // No session -> must login/register
+            if (location.pathname === '/portal' || location.pathname === '/scratch') {
+                navigate('/login', { replace: true });
             }
         }
+
         if (savedHistory) {
             setHistory(JSON.parse(savedHistory));
         }
-    }, []);
+    }, [location.pathname, navigate]);
 
     const saveSession = (customerData: Customer) => {
         const session = {
@@ -72,13 +106,13 @@ const CustomerPortal: React.FC = () => {
         if (remoteCustomer) {
             setCustomer(remoteCustomer);
             saveSession(remoteCustomer);
-            setStep('profile');
+            navigate('/portal');
             return;
         }
 
         // User doesn't exist -> Redirect to Registration
         setPrefilledPhone(phone);
-        setStep('register');
+        navigate('/register');
     };
 
     const handleRegister = async (data: CustomerRegistration) => {
@@ -87,7 +121,7 @@ const CustomerPortal: React.FC = () => {
             setCustomer(result.data);
             saveSession(result.data);
             setSelectedOffer(getRandomOffer());
-            setStep('scratch');
+            navigate('/scratch');
         } else {
             console.error('Registration failed:', result.message);
         }
@@ -96,12 +130,21 @@ const CustomerPortal: React.FC = () => {
     const handleUpdateProfile = async (updatedCustomer: Customer) => {
         const result = await customerService.registerCustomer({
             ...updatedCustomer,
-            spType: 'E'
+            spType: 'U'
         });
 
         if (result.success && result.data) {
-            setCustomer(result.data);
-            saveSession(result.data);
+            // Re-fetch fresh data from backend to ensure synchronization
+            const freshCustomer = await customerService.getCustomerByPhone(updatedCustomer.phone);
+            if (freshCustomer) {
+                setCustomer(freshCustomer);
+                saveSession(freshCustomer);
+            } else {
+                // Fallback to update data if refresh fails
+                setCustomer(result.data);
+                saveSession(result.data);
+            }
+
             setStep('profile'); // Force stay on profile
             setUpdateMessage({ type: 'success', text: 'Profile updated successfully!' });
             setTimeout(() => setUpdateMessage(null), 3000);
@@ -126,7 +169,7 @@ const CustomerPortal: React.FC = () => {
         localStorage.setItem('asg_history', JSON.stringify(updatedHistory));
 
         setTimeout(() => {
-            setStep('result');
+            navigate('/result');
         }, 1000);
     };
 
@@ -135,7 +178,7 @@ const CustomerPortal: React.FC = () => {
         localStorage.removeItem('asg_history');
         setCustomer(null);
         setHistory([]);
-        setStep('login');
+        navigate('/login');
     };
 
     return (
@@ -221,7 +264,7 @@ const CustomerPortal: React.FC = () => {
                                 ...selectedOffer,
                                 expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
                             }}
-                            onClose={() => setStep('profile')}
+                            onClose={() => navigate('/portal')}
                         />
                     </motion.div>
                 )}
@@ -244,7 +287,7 @@ const CustomerPortal: React.FC = () => {
                             onUpdate={handleUpdateProfile}
                             onBackToScratch={() => {
                                 setSelectedOffer(getRandomOffer());
-                                setStep('scratch');
+                                navigate('/scratch');
                             }}
                         />
                     </motion.div>
