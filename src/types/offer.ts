@@ -8,10 +8,10 @@ export interface Offer {
     allotted: number;
     revealed: number;
     targeting: 'all' | 'new' | 'frequent' | 'inactive';
-    startDate: string;
-    endDate: string;
-    history: { name: string; value: number }[];
-    utilizations: {
+    startDate?: string;
+    endDate?: string;
+    history?: { name: string; value: number }[];
+    utilizations?: {
         id: number;
         userName: string;
         phone: string;

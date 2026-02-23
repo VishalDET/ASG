@@ -52,5 +52,21 @@ export const customerService = {
             console.error('Error registering customer:', error);
             return { success: false, message: 'Connection error' };
         }
+    },
+
+    async getAllCustomers(): Promise<Customer[]> {
+        try {
+            const response = await fetch(`${API_URL}/Customer/GetCustomers`);
+            if (!response.ok) return [];
+
+            const result = await response.json();
+            if (result.success && result.data) {
+                return result.data;
+            }
+            return [];
+        } catch (error) {
+            console.error('Error fetching all customers:', error);
+            return [];
+        }
     }
 };

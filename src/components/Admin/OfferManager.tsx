@@ -1,91 +1,11 @@
-import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Power, Percent, Users, Calendar, X, Target, Info, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, Power, Percent, Users, Calendar, X, Target, Info, TrendingUp, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Offer, TARGETS } from '../../types/offer';
+import { offerService } from '../../services/offerService';
 import OfferAnalyticsView from './OfferAnalyticsView';
 
-const MOCK_OFFERS: Offer[] = [
-    {
-        id: 1,
-        title: '10% OFF',
-        description: 'Applicable on total bill',
-        weight: 50,
-        status: 'active',
-        redemptions: 450,
-        allotted: 1200,
-        revealed: 850,
-        targeting: 'all',
-        startDate: '2026-01-01',
-        endDate: '2026-12-31',
-        history: [
-            { name: 'Mon', value: 40 },
-            { name: 'Tue', value: 35 },
-            { name: 'Wed', value: 55 },
-            { name: 'Thu', value: 65 },
-            { name: 'Fri', value: 80 },
-            { name: 'Sat', value: 95 },
-            { name: 'Sun', value: 80 },
-        ],
-        utilizations: [
-            { id: 1, userName: 'Rahul Sharma', phone: '9876543210', redeemedAt: '2026-02-14 14:30', status: 'redeemed' },
-            { id: 2, userName: 'Priya Patel', phone: '9123456789', redeemedAt: '2026-02-15 11:20', status: 'redeemed' },
-            { id: 3, userName: 'Amit Kumar', phone: '8877665544', redeemedAt: '2026-02-16 09:45', status: 'redeemed' },
-            { id: 4, userName: 'Vikram Singh', phone: '9988776655', redeemedAt: '2026-02-13 18:15', status: 'redeemed' },
-            { id: 5, userName: 'Sneha Gupta', phone: '7766554433', redeemedAt: '2026-02-15 15:50', status: 'redeemed' },
-        ]
-    },
-    {
-        id: 2,
-        title: '20% OFF',
-        description: 'Applicable on bills above 1000',
-        weight: 30,
-        status: 'active',
-        redemptions: 210,
-        allotted: 800,
-        revealed: 520,
-        targeting: 'frequent',
-        startDate: '2026-02-01',
-        endDate: '2026-03-01',
-        history: [
-            { name: 'Mon', value: 20 },
-            { name: 'Tue', value: 15 },
-            { name: 'Wed', value: 25 },
-            { name: 'Thu', value: 30 },
-            { name: 'Fri', value: 45 },
-            { name: 'Sat', value: 40 },
-            { name: 'Sun', value: 35 },
-        ],
-        utilizations: [
-            { id: 6, userName: 'Rahul Sharma', phone: '9876543210', redeemedAt: '2026-02-12 12:30', status: 'redeemed' },
-            { id: 7, userName: 'Amit Kumar', phone: '8877665544', redeemedAt: '2026-02-15 13:45', status: 'redeemed' },
-        ]
-    },
-    {
-        id: 3,
-        title: 'Free Dessert',
-        description: 'One chocolate lava cake',
-        weight: 15,
-        status: 'active',
-        redemptions: 85,
-        allotted: 500,
-        revealed: 310,
-        targeting: 'new',
-        startDate: '2026-02-10',
-        endDate: '2026-02-28',
-        history: [
-            { name: 'Mon', value: 8 },
-            { name: 'Tue', value: 12 },
-            { name: 'Wed', value: 10 },
-            { name: 'Thu', value: 15 },
-            { name: 'Fri', value: 18 },
-            { name: 'Sat', value: 12 },
-            { name: 'Sun', value: 10 },
-        ],
-        utilizations: [
-            { id: 8, userName: 'Priya Patel', phone: '9123456789', redeemedAt: '2026-02-14 16:20', status: 'redeemed' },
-        ]
-    },
-];
+
 
 const TARGET_ICONS = {
     all: Users,
@@ -95,10 +15,21 @@ const TARGET_ICONS = {
 } as const;
 
 const OfferManager: React.FC = () => {
-    const [offers, setOffers] = useState<Offer[]>(MOCK_OFFERS);
+    const [offers, setOffers] = useState<Offer[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
     const [viewingStats, setViewingStats] = useState<Offer | null>(null);
+
+    useEffect(() => {
+        const fetchOffers = async () => {
+            setLoading(true);
+            const data = await offerService.getAllOffers();
+            setOffers(data);
+            setLoading(false);
+        };
+        fetchOffers();
+    }, []);
 
     // Form state
     const [formData, setFormData] = useState<Partial<Offer>>({
@@ -183,96 +114,119 @@ const OfferManager: React.FC = () => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {offers.map((offer) => (
-                    <div
-                        key={offer.id}
-                        onClick={() => setViewingStats(offer)}
-                        className={`bg-slate-900/40 border ${offer.status === 'active' ? 'border-slate-800' : 'border-slate-800/50'} p-6 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all cursor-pointer`}
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <Loader2 className="w-10 h-10 text-brand-orange animate-spin" />
+                    <p className="text-slate-400 font-medium">Loading offers from backend...</p>
+                </div>
+            ) : offers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4 border-2 border-dashed border-slate-800 rounded-3xl">
+                    <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center text-slate-500">
+                        <Plus size={32} />
+                    </div>
+                    <div className="text-center">
+                        <h3 className="text-xl font-bold text-white">No Offers Found</h3>
+                        <p className="text-slate-400 text-sm">Create your first reward to get started</p>
+                    </div>
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="mt-2 bg-brand-orange hover:bg-brand-orange/90 text-white px-6 py-2 rounded-xl font-bold transition-all"
                     >
-                        {offer.status === 'inactive' && (
-                            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none">
-                                <span className="bg-slate-800 text-slate-400 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-slate-700 shadow-xl">Inactive</span>
-                            </div>
-                        )}
-
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="bg-brand-orange/10 p-3 rounded-xl text-brand-orange">
-                                <Percent size={24} />
-                            </div>
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                                <button
-                                    onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleOpenModal(offer); }}
-                                    className="p-2 bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
-                                >
-                                    <Edit2 size={16} />
-                                </button>
-                                <button
-                                    onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleDelete(offer.id); }}
-                                    className="p-2 bg-slate-800 rounded-lg text-slate-400 hover:text-red-400 transition-colors"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-                        </div>
-
-                        <h3 className="text-xl font-bold text-white mb-2">{offer.title}</h3>
-                        <p className="text-slate-400 text-sm mb-4 line-clamp-2">{offer.description}</p>
-
-                        <div className="space-y-4">
-                            {/* Metadata */}
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                {(() => {
-                                    const TargetIcon = TARGET_ICONS[offer.targeting] || Info;
-                                    return (
-                                        <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800/50 border border-slate-700/50 text-xs text-slate-300">
-                                            <TargetIcon size={12} className="text-brand-blue" />
-                                            {TARGETS.find(t => t.value === offer.targeting)?.label}
-                                        </span>
-                                    );
-                                })()}
-                                <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800/50 border border-slate-700/50 text-xs text-slate-300">
-                                    <Calendar size={12} className="text-brand-green" />
-                                    {new Date(offer.endDate).toLocaleDateString()}
-                                </span>
-                            </div>
-
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-slate-500">Win Probability</span>
-                                <span className="text-white font-mono bg-slate-800 px-2 py-0.5 rounded">{offer.weight}%</span>
-                            </div>
-                            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                <div
-                                    className="bg-brand-orange h-full rounded-full transition-all duration-1000"
-                                    style={{ width: `${offer.weight}%` }}
-                                />
-                            </div>
-                            <div className="flex justify-between items-center pt-2 border-t border-slate-800/50">
-                                <div className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                                    <TrendingUp size={14} className="text-brand-green" />
-                                    {offer.redemptions} Redemptions
+                        New Offer
+                    </button>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {offers.map((offer) => (
+                        <div
+                            key={offer.id}
+                            onClick={() => setViewingStats(offer)}
+                            className={`bg-slate-900/40 border ${offer.status === 'active' ? 'border-slate-800' : 'border-slate-800/50'} p-6 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all cursor-pointer`}
+                        >
+                            {offer.status === 'inactive' && (
+                                <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none">
+                                    <span className="bg-slate-800 text-slate-400 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-slate-700 shadow-xl">Inactive</span>
                                 </div>
-                                <button
-                                    onClick={(e: React.MouseEvent) => { e.stopPropagation(); toggleStatus(offer.id); }}
-                                    className={`p-2 rounded-lg transition-all z-20 ${offer.status === 'active' ? 'text-brand-green hover:bg-brand-green/10' : 'text-slate-500 hover:bg-slate-800'}`}
-                                >
-                                    <Power size={18} />
-                                </button>
+                            )}
+
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="bg-brand-orange/10 p-3 rounded-xl text-brand-orange">
+                                    <Percent size={24} />
+                                </div>
+                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                    <button
+                                        onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleOpenModal(offer); }}
+                                        className="p-2 bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button
+                                        onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleDelete(offer.id); }}
+                                        className="p-2 bg-slate-800 rounded-lg text-slate-400 hover:text-red-400 transition-colors"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <h3 className="text-xl font-bold text-white mb-2">{offer.title}</h3>
+                            <p className="text-slate-400 text-sm mb-4 line-clamp-2">{offer.description}</p>
+
+                            <div className="space-y-4">
+                                {/* Metadata */}
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    {(() => {
+                                        const TargetIcon = TARGET_ICONS[offer.targeting] || Info;
+                                        return (
+                                            <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800/50 border border-slate-700/50 text-xs text-slate-300">
+                                                <TargetIcon size={12} className="text-brand-blue" />
+                                                {TARGETS.find(t => t.value === offer.targeting)?.label || 'All Users'}
+                                            </span>
+                                        );
+                                    })()}
+                                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800/50 border border-slate-700/50 text-xs text-slate-300">
+                                        <Calendar size={12} className="text-brand-green" />
+                                        {offer.endDate ? new Date(offer.endDate).toLocaleDateString() : 'No expiry'}
+                                    </span>
+                                </div>
+
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-slate-500">Win Probability</span>
+                                    <span className="text-white font-mono bg-slate-800 px-2 py-0.5 rounded">{offer.weight}%</span>
+                                </div>
+                                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                    <div
+                                        className="bg-brand-orange h-full rounded-full transition-all duration-1000"
+                                        style={{ width: `${offer.weight}%` }}
+                                    />
+                                </div>
+                                <div className="flex justify-between items-center pt-2 border-t border-slate-800/50">
+                                    <div className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                        <TrendingUp size={14} className="text-brand-green" />
+                                        {offer.redemptions} Redemptions
+                                    </div>
+                                    <button
+                                        onClick={(e: React.MouseEvent) => { e.stopPropagation(); toggleStatus(offer.id); }}
+                                        className={`p-2 rounded-lg transition-all z-20 ${offer.status === 'active' ? 'text-brand-green hover:bg-brand-green/10' : 'text-slate-500 hover:bg-slate-800'}`}
+                                    >
+                                        <Power size={18} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
 
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="border-2 border-dashed border-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center text-slate-500 hover:text-brand-orange hover:border-brand-orange/50 transition-all gap-4 group min-h-[250px]"
-                >
-                    <div className="w-12 h-12 rounded-full border-2 border-dashed border-slate-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Plus size={24} />
-                    </div>
-                    <span className="font-medium">Add another prize tier</span>
-                </button>
-            </div>
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="border-2 border-dashed border-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center text-slate-500 hover:text-brand-orange hover:border-brand-orange/50 transition-all gap-4 group min-h-[250px]"
+                    >
+                        <div className="w-12 h-12 rounded-full border-2 border-dashed border-slate-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Plus size={24} />
+                        </div>
+                        <span className="font-medium">Add another prize tier</span>
+                    </button>
+                </div>
+            )}
 
             {/* Edit/Create Modal */}
             <AnimatePresence>

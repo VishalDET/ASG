@@ -10,9 +10,12 @@ const AdminRoute: React.FC<{ children: React.ReactNode; isAuthenticated: boolean
 };
 
 const App: React.FC = () => {
-    const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
+    const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('bypass') === 'true';
+    });
 
-    // Handle initial state and bypass
+    // Handle initial state and bypass reactive updates
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         if (params.get('bypass') === 'true') {
@@ -25,7 +28,11 @@ const App: React.FC = () => {
             <Routes>
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={
-                    <AdminLogin onLogin={() => setIsAdminAuthenticated(true)} />
+                    isAdminAuthenticated ? (
+                        <Navigate to="/admin/dashboard" replace />
+                    ) : (
+                        <AdminLogin onLogin={() => setIsAdminAuthenticated(true)} />
+                    )
                 } />
                 <Route path="/admin/*" element={
                     <AdminRoute isAuthenticated={isAdminAuthenticated}>

@@ -9,8 +9,16 @@ export interface CustomerRegistration {
     spType?: string;
 }
 
+export interface OfferHistoryEntry {
+    offerId: number;
+    offerTitle: string;
+    redeemedAt: string;
+    status: 'redeemed' | 'expired';
+}
+
 export interface Customer extends CustomerRegistration {
     id: number;
     visitCount: number;
     registeredAt?: string;
+    offerHistory?: OfferHistoryEntry[];
 }
