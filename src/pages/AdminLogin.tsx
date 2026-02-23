@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
 
 interface AdminLoginProps {
     onLogin: () => void;
@@ -10,14 +12,28 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Simple mock authentication
-        if (email === 'admin@asg.com' && password === 'admin123') {
+        setError('');
+        setIsLoading(true);
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
             onLogin();
-        } else {
-            setError('Invalid email or password');
+        } catch (err: any) {
+            console.error('Login error:', err);
+            // Firebase error messages are usually developer-friendly, so we can map common ones
+            if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+                setError('Invalid email or password');
+            } else if (err.code === 'auth/too-many-requests') {
+                setError('Too many failed login attempts. Please try again later.');
+            } else {
+                setError('Failed to login. Please try again.');
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -74,10 +90,17 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
 
                     <button
                         type="submit"
-                        className="w-full bg-primary hover:bg-primaryDark text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 group transition-all shadow-lg shadow-primary/20"
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-primaryDark text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 group transition-all shadow-lg shadow-primary/20 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        Sign In
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        {isLoading ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <>
+                                Sign In
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </>
+                        )}
                     </button>
                 </form>
 

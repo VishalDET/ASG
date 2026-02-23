@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import {
     Users,
     Gift,
@@ -9,28 +10,22 @@ import {
     X
 } from 'lucide-react';
 
-export type TabId = 'customers' | 'offers' | 'redeem' | 'analytics';
-
 interface SidebarProps {
-    activeTab: TabId;
-    setActiveTab: (tab: TabId) => void;
     isSidebarOpen: boolean;
     setIsSidebarOpen: (isOpen: boolean) => void;
     onLogout: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-    activeTab,
-    setActiveTab,
     isSidebarOpen,
     setIsSidebarOpen,
     onLogout
 }) => {
     const menuItems = [
-        { id: 'analytics' as TabId, label: 'Dashboard', icon: BarChart3 },
-        { id: 'customers' as TabId, label: 'Customers', icon: Users },
-        { id: 'offers' as TabId, label: 'Offer Manager', icon: Gift },
-        { id: 'redeem' as TabId, label: 'Redemption', icon: TicketCheck },
+        { path: '/admin/analytics', label: 'Dashboard', icon: BarChart3 },
+        { path: '/admin/customers', label: 'Customers', icon: Users },
+        { path: '/admin/offers', label: 'Offer Manager', icon: Gift },
+        { path: '/admin/redeem', label: 'Redemption', icon: TicketCheck },
     ];
 
     return (
@@ -56,19 +51,19 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             <nav className="flex-1 px-4 py-6 space-y-2">
                 {menuItems.map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        className={`
+                    <NavLink
+                        key={item.path}
+                        to={item.path}
+                        className={({ isActive }) => `
                             w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all
-                            ${activeTab === item.id
+                            ${isActive
                                 ? 'bg-primary text-white shadow-lg shadow-primary/20'
                                 : 'hover:bg-slate-800 text-slate-400'}
                         `}
                     >
                         <item.icon size={22} />
                         {isSidebarOpen && <span className="font-medium">{item.label}</span>}
-                    </button>
+                    </NavLink>
                 ))}
             </nav>
 

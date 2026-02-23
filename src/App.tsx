@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import CustomerPortal from './pages/CustomerPortal';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './firebase';
 
 const AdminRoute: React.FC<{ children: React.ReactNode; isAuthenticated: boolean }> = ({ children, isAuthenticated }) => {
     if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
@@ -10,18 +12,42 @@ const AdminRoute: React.FC<{ children: React.ReactNode; isAuthenticated: boolean
 };
 
 const App: React.FC = () => {
-    const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-        const params = new URLSearchParams(window.location.search);
-        return params.get('bypass') === 'true';
-    });
+    const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
+    const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
 
-    // Handle initial state and bypass reactive updates
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        if (params.get('bypass') === 'true') {
-            setIsAdminAuthenticated(true);
-        }
+        const bypass = params.get('bypass') === 'true';
+
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user || bypass) {
+                setIsAdminAuthenticated(true);
+            } else {
+                setIsAdminAuthenticated(false);
+            }
+            setIsAuthLoading(false);
+        });
+
+        return () => unsubscribe();
     }, []);
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            setIsAdminAuthenticated(false);
+        } catch (error) {
+            console.error("Error signing out: ", error);
+        }
+    };
+
+    if (isAuthLoading) {
+        return (
+            <div className="min-h-screen bg-dark flex flex-col items-center justify-center text-primary">
+                <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                <p className="mt-4 text-slate-400 font-medium">Verifying Session...</p>
+            </div>
+        );
+    }
 
     return (
         <Router>
@@ -36,7 +62,7 @@ const App: React.FC = () => {
                 } />
                 <Route path="/admin/*" element={
                     <AdminRoute isAuthenticated={isAdminAuthenticated}>
-                        <AdminDashboard onLogout={() => setIsAdminAuthenticated(false)} />
+                        <AdminDashboard onLogout={handleLogout} />
                     </AdminRoute>
                 } />
 

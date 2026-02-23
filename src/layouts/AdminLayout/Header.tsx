@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bell, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface HeaderProps {
     userName: string;
@@ -26,15 +27,15 @@ const Header: React.FC<HeaderProps> = ({ userName, userRole, userInitial }) => {
                     <Bell size={20} className="group-hover:scale-110 transition-transform" />
                     <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-dark"></span>
                 </button>
-                <div className="flex items-center gap-3 pl-6 border-l border-slate-800">
-                    <div className="text-right hidden sm:block">
+                <Link to="/admin/profile" className="flex items-center gap-3 pl-6 border-l border-slate-800 hover:bg-slate-800/50 p-2 rounded-xl transition-colors cursor-pointer group">
+                    <div className="text-right hidden sm:block transition-transform group-hover:-translate-x-1">
                         <p className="text-sm font-semibold text-white">{userName}</p>
                         <p className="text-xs text-slate-500 uppercase tracking-wider">{userRole}</p>
                     </div>
-                    <div className="w-10 h-10 bg-slate-800 rounded-full border border-slate-700 flex items-center justify-center font-bold text-primary shadow-lg shadow-primary/5 ring-1 ring-white/5">
+                    <div className="w-10 h-10 bg-slate-800 rounded-full border border-slate-700 flex items-center justify-center font-bold text-primary shadow-lg shadow-primary/5 ring-1 ring-white/5 group-hover:ring-primary/50 transition-all">
                         {userInitial}
                     </div>
-                </div>
+                </Link>
             </div>
         </header>
     );

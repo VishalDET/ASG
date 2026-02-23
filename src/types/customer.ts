@@ -10,10 +10,12 @@ export interface CustomerRegistration {
 }
 
 export interface OfferHistoryEntry {
-    offerId: number;
+    redemptionId: number;
+    code: string;
     offerTitle: string;
-    redeemedAt: string;
-    status: 'redeemed' | 'expired';
+    status: string;
+    revealedAt: string;
+    redeemedAt: string | null;
 }
 
 export interface Customer extends CustomerRegistration {

@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
-import Sidebar, { TabId } from './Sidebar';
+import Sidebar from './Sidebar';
 import Header from './Header';
 
 interface AdminLayoutProps {
     children: React.ReactNode;
-    activeTab: TabId;
-    setActiveTab: (tab: TabId) => void;
     onLogout: () => void;
 }
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({
     children,
-    activeTab,
-    setActiveTab,
     onLogout
 }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -20,8 +16,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     return (
         <div className="min-h-screen bg-dark text-slate-200 flex italic-none">
             <Sidebar
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
                 isSidebarOpen={isSidebarOpen}
                 setIsSidebarOpen={setIsSidebarOpen}
                 onLogout={onLogout}

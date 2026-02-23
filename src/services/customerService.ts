@@ -68,5 +68,21 @@ export const customerService = {
             console.error('Error fetching all customers:', error);
             return [];
         }
+    },
+
+    async getCustomerProfile(id: number): Promise<Customer | null> {
+        try {
+            const response = await fetch(`${API_URL}/Customer/GetCustomerProfile/${id}`);
+            if (!response.ok) return null;
+
+            const result = await response.json();
+            if (result.success && result.data) {
+                return result.data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching customer profile:', error);
+            return null;
+        }
     }
 };
