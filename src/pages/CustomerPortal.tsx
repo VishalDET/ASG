@@ -10,24 +10,7 @@ import CustomerLayout from '../layouts/CustomerLayout/CustomerLayout';
 import { Customer, CustomerRegistration } from '../types/customer';
 import { customerService } from '../services/customerService';
 
-const OFFERS = [
-    { title: '10% OFF', code: 'RESTO-ASG-10', weight: 50 },
-    { title: '20% OFF', code: 'RESTO-ASG-20', weight: 30 },
-    { title: 'Free Dessert', code: 'RESTO-SWEET', weight: 15 },
-    { title: '50% OFF', code: 'RESTO-BINGO', weight: 5 },
-];
-
 const SESSION_DURATION = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-
-const getRandomOffer = () => {
-    const totalWeight = OFFERS.reduce((acc, offer) => acc + offer.weight, 0);
-    let random = Math.random() * totalWeight;
-    for (const offer of OFFERS) {
-        if (random < offer.weight) return offer;
-        random -= offer.weight;
-    }
-    return OFFERS[0];
-};
 
 interface CustomerPortalProps {
     initialStep?: 'register' | 'login' | 'scratch' | 'result' | 'profile';
@@ -120,7 +103,6 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
         if (result.success && result.data) {
             setCustomer(result.data);
             saveSession(result.data);
-            setSelectedOffer(getRandomOffer());
             navigate('/scratch');
         } else {
             console.error('Registration failed:', result.message);
@@ -155,14 +137,17 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
         }
     };
 
-    const handleScratchComplete = () => {
+    const handleScratchComplete = (offer: any) => {
         const newOffer = {
             id: Math.random().toString(36).substr(2, 9),
-            title: selectedOffer.title,
-            code: selectedOffer.code,
+            title: offer.title,
+            code: offer.code,
+            expiryDate: offer.expiryDate,
             status: 'available',
             date: new Date().toLocaleDateString()
         };
+
+        setSelectedOffer(offer);
 
         const updatedHistory = [newOffer, ...history];
         setHistory(updatedHistory);
@@ -171,6 +156,11 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
         setTimeout(() => {
             navigate('/result');
         }, 1000);
+    };
+
+    const hasScratchedToday = () => {
+        const today = new Date().toLocaleDateString();
+        return history.some(item => item.date === today);
     };
 
     const logout = () => {
@@ -188,9 +178,9 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
             onProfileClick={() => setStep('profile')}
         >
             {updateMessage && (
-                <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl border flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${updateMessage.type === 'success' ? 'bg-success/20 border-success/40 text-success' : 'bg-red-500/20 border-red-500/40 text-red-200'
+                <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl border flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${updateMessage.type === 'success' ? 'bg-success/20 border-success/40 text-success' : 'bg-amber-500/20 border-amber-500/40 text-amber-200'
                     }`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${updateMessage.type === 'success' ? 'bg-success/20' : 'bg-red-500/20'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${updateMessage.type === 'success' ? 'bg-success/20' : 'bg-amber-500/20'}`}>
                         {updateMessage.type === 'success' ? '✓' : '✕'}
                     </div>
                     <p className="font-bold">{updateMessage.text}</p>
@@ -240,14 +230,7 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
                         </div>
                         <ScratchCard
                             onComplete={handleScratchComplete}
-                            offerHtml={
-                                <div className="text-center">
-                                    <span className="text-sm uppercase text-accent font-bold tracking-widest block mb-2">
-                                        You Won
-                                    </span>
-                                    <span className="text-4xl font-black text-slate-800">{selectedOffer?.title}</span>
-                                </div>
-                            }
+                            customerId={customer?.id || 0}
                         />
                     </motion.div>
                 )}
@@ -262,7 +245,7 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
                         <ResultView
                             offer={{
                                 ...selectedOffer,
-                                expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+                                expiry: selectedOffer?.expiryDate || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
                             }}
                             onClose={() => navigate('/portal')}
                         />
@@ -285,8 +268,9 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
                             history={history}
                             onClose={logout}
                             onUpdate={handleUpdateProfile}
+                            hasScratchedToday={hasScratchedToday()}
                             onBackToScratch={() => {
-                                setSelectedOffer(getRandomOffer());
+                                if (hasScratchedToday()) return;
                                 navigate('/scratch');
                             }}
                         />

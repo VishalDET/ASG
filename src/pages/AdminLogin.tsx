@@ -3,6 +3,7 @@ import { Lock, Mail, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
+import { adminService } from '../services/adminService';
 
 interface AdminLoginProps {
     onLogin: () => void;
@@ -20,8 +21,42 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
         setIsLoading(true);
 
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-            onLogin();
+            // 1. Authenticate with Firebase
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            if (user.email) {
+                // 2. Fetch the corresponding Admin profile from backend
+                const adminResponse = await adminService.getAdminByEmail(user.email);
+
+                if (adminResponse.success && adminResponse.data) {
+                    const adminData = adminResponse.data;
+
+                    if (!adminData.isActive) {
+                        setError('This admin account has been deactivated.');
+                        await auth.signOut();
+                        return;
+                    }
+
+                    // 3. Store the required Admin profile fields in sessionStorage
+                    sessionStorage.setItem('adminSession', JSON.stringify({
+                        id: adminData.id,
+                        firebaseUid: adminData.firebaseUid,
+                        email: adminData.email,
+                        role: adminData.role
+                    }));
+
+                    onLogin();
+                } else {
+                    // Profile not found in backend DB
+                    setError('Admin profile not found in the system. Access Denied.');
+                    await auth.signOut();
+                }
+            } else {
+                setError('Failed to retrieve user email. Please try again.');
+                await auth.signOut();
+            }
+
         } catch (err: any) {
             console.error('Login error:', err);
             // Firebase error messages are usually developer-friendly, so we can map common ones

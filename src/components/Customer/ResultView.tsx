@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Copy, Share2 } from 'lucide-react';
+import CountdownTimer from './CountdownTimer';
+import { handleShare } from '../../utils/shareUtils';
 
 interface ResultViewProps {
     offer: {
@@ -47,7 +49,9 @@ const ResultView: React.FC<ResultViewProps> = ({ offer, onClose }) => {
                         <Copy className="w-5 h-5 text-slate-400" />
                     </button>
                 </div>
-                <p className="text-xs text-slate-500 mt-4">Valid until: {offer.expiry}</p>
+                <div className="mt-4 flex justify-center">
+                    <CountdownTimer expiryDate={offer.expiry} />
+                </div>
             </div>
 
             <div className="flex gap-4">
@@ -57,7 +61,10 @@ const ResultView: React.FC<ResultViewProps> = ({ offer, onClose }) => {
                 >
                     Got it
                 </button>
-                <button className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all">
+                <button
+                    onClick={() => handleShare(offer)}
+                    className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all"
+                >
                     <Share2 className="w-5 h-5" />
                 </button>
             </div>

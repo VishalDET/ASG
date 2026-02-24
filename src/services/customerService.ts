@@ -84,5 +84,28 @@ export const customerService = {
             console.error('Error fetching customer profile:', error);
             return null;
         }
+    },
+
+    async generateScratchCard(customerId: number): Promise<{ success: boolean; data?: any; message?: string }> {
+        try {
+            const body = { customerId };
+            const response = await fetch(`${API_URL}/Offer/GenerateScratchCard`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            });
+
+            const result = await response.json();
+            return {
+                success: result.success,
+                data: result.data,
+                message: result.message
+            };
+        } catch (error) {
+            console.error('Error generating scratch card:', error);
+            return { success: false, message: 'Connection error' };
+        }
     }
 };

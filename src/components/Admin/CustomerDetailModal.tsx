@@ -161,7 +161,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ customer, isO
                                     </section>
 
                                     {/* Offer History */}
-                                    <section className="space-y-4 pb-8">
+                                    <section className="space-y-4 pb-8 max-w-7xl mx-auto">
                                         <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                             <History size={14} /> Reward History
                                         </h3>

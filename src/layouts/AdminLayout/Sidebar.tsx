@@ -7,7 +7,8 @@ import {
     BarChart3,
     LogOut,
     Menu,
-    X
+    X,
+    Shield
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -26,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         { path: '/admin/customers', label: 'Customers', icon: Users },
         { path: '/admin/offers', label: 'Offer Manager', icon: Gift },
         { path: '/admin/redeem', label: 'Redemption', icon: TicketCheck },
+        { path: '/admin/users', label: 'Admin Users', icon: Shield },
     ];
 
     return (

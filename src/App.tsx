@@ -5,6 +5,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from './firebase';
+import { Toaster } from 'react-hot-toast';
 
 const AdminRoute: React.FC<{ children: React.ReactNode; isAuthenticated: boolean }> = ({ children, isAuthenticated }) => {
     if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
@@ -20,8 +21,23 @@ const App: React.FC = () => {
         const bypass = params.get('bypass') === 'true';
 
         const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user || bypass) {
+            const adminSessionRaw = sessionStorage.getItem('adminSession');
+
+            if (bypass) {
                 setIsAdminAuthenticated(true);
+            } else if (user && adminSessionRaw) {
+                // User is authenticated in Firebase AND has a valid session
+                try {
+                    const adminSession = JSON.parse(adminSessionRaw);
+                    if (adminSession && adminSession.email === user.email) {
+                        setIsAdminAuthenticated(true);
+                    } else {
+                        // Mismatched session (e.g., leftover session from another user)
+                        setIsAdminAuthenticated(false);
+                    }
+                } catch (e) {
+                    setIsAdminAuthenticated(false);
+                }
             } else {
                 setIsAdminAuthenticated(false);
             }
@@ -34,6 +50,7 @@ const App: React.FC = () => {
     const handleLogout = async () => {
         try {
             await signOut(auth);
+            sessionStorage.removeItem('adminSession');
             setIsAdminAuthenticated(false);
         } catch (error) {
             console.error("Error signing out: ", error);
@@ -50,34 +67,44 @@ const App: React.FC = () => {
     }
 
     return (
-        <Router>
-            <Routes>
-                {/* Admin Routes */}
-                <Route path="/admin/login" element={
-                    isAdminAuthenticated ? (
-                        <Navigate to="/admin/dashboard" replace />
-                    ) : (
-                        <AdminLogin onLogin={() => setIsAdminAuthenticated(true)} />
-                    )
-                } />
-                <Route path="/admin/*" element={
-                    <AdminRoute isAuthenticated={isAdminAuthenticated}>
-                        <AdminDashboard onLogout={handleLogout} />
-                    </AdminRoute>
-                } />
+        <>
+            <Toaster position="top-right" toastOptions={{
+                duration: 3000,
+                style: {
+                    background: '#1e293b',
+                    color: '#fff',
+                    border: '1px solid #334155',
+                },
+            }} />
+            <Router>
+                <Routes>
+                    {/* Admin Routes */}
+                    <Route path="/admin/login" element={
+                        isAdminAuthenticated ? (
+                            <Navigate to="/admin/dashboard" replace />
+                        ) : (
+                            <AdminLogin onLogin={() => setIsAdminAuthenticated(true)} />
+                        )
+                    } />
+                    <Route path="/admin/*" element={
+                        <AdminRoute isAuthenticated={isAdminAuthenticated}>
+                            <AdminDashboard onLogout={handleLogout} />
+                        </AdminRoute>
+                    } />
 
-                {/* Customer Routes handled within CustomerPortal */}
-                <Route path="/login" element={<CustomerPortal initialStep="login" />} />
-                <Route path="/register" element={<CustomerPortal initialStep="register" />} />
-                <Route path="/portal" element={<CustomerPortal initialStep="profile" />} />
-                <Route path="/scratch" element={<CustomerPortal initialStep="scratch" />} />
-                <Route path="/result" element={<CustomerPortal initialStep="result" />} />
+                    {/* Customer Routes handled within CustomerPortal */}
+                    <Route path="/login" element={<CustomerPortal initialStep="login" />} />
+                    <Route path="/register" element={<CustomerPortal initialStep="register" />} />
+                    <Route path="/portal" element={<CustomerPortal initialStep="profile" />} />
+                    <Route path="/scratch" element={<CustomerPortal initialStep="scratch" />} />
+                    <Route path="/result" element={<CustomerPortal initialStep="result" />} />
 
-                {/* Redirects */}
-                <Route path="/" element={<Navigate to="/login" replace />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-        </Router>
+                    {/* Redirects */}
+                    <Route path="/" element={<Navigate to="/login" replace />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </Router>
+        </>
     );
 };
 

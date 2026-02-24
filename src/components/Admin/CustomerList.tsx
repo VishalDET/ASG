@@ -43,7 +43,7 @@ const CustomerList: React.FC = () => {
     });
 
     return (
-        <div className="p-8 space-y-6">
+        <div className="p-8 space-y-6 max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-white">Customer Database</h1>

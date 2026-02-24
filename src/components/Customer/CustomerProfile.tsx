@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import CountdownTimer from './CountdownTimer';
+import { handleShare } from '../../utils/shareUtils';
 import {
     Gift,
     TicketCheck,
@@ -13,7 +16,10 @@ import {
     GlassWater,
     Edit2,
     Check,
-    X
+    X,
+    CheckCircle2,
+    Copy,
+    Share2
 } from 'lucide-react';
 import { Customer } from '../../types/customer';
 import { calculateAge } from '../../utils/dateUtils';
@@ -24,6 +30,7 @@ interface OfferHistoryItem {
     code: string;
     status: 'available' | 'redeemed';
     date: string;
+    expiryDate?: string;
 }
 
 interface CustomerProfileProps {
@@ -31,7 +38,8 @@ interface CustomerProfileProps {
     history: OfferHistoryItem[];
     onClose: () => void;
     onBackToScratch: () => void;
-    onUpdate?: (updatedCustomer: Customer) => void;
+    onUpdate: (updatedCustomer: Customer) => void;
+    hasScratchedToday?: boolean;
 }
 
 const ALCOHOL_OPTIONS = [
@@ -50,7 +58,8 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
     history,
     onClose,
     onBackToScratch,
-    onUpdate
+    onUpdate,
+    hasScratchedToday = false
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editedName, setEditedName] = useState(customer.name);
@@ -59,6 +68,7 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
     const [editedGender, setEditedGender] = useState<Customer['gender']>(customer.gender);
     const [editedFoodPref, setEditedFoodPref] = useState(customer.foodPreference);
     const [editedAlcoholPref, setEditedAlcoholPref] = useState(customer.alcoholPreference);
+    const [selectedOfferDetail, setSelectedOfferDetail] = useState<OfferHistoryItem | null>(null);
 
     const currentAge = editedDob ? calculateAge(editedDob) : 0;
 
@@ -85,6 +95,11 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
         setEditedFoodPref(customer.foodPreference);
         setEditedAlcoholPref(customer.alcoholPreference);
         setIsEditing(false);
+    };
+
+    const copyToClipboard = (code: string) => {
+        navigator.clipboard.writeText(code);
+        toast.success('Code copied to clipboard!');
     };
 
     return (
@@ -309,7 +324,8 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
                             history.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="bg-slate-900/40 border border-slate-800 p-4 rounded-xl flex items-center justify-between group hover:border-primary/30 transition-all shadow-sm"
+                                    onClick={() => setSelectedOfferDetail(item)}
+                                    className="bg-slate-900/40 border border-slate-800 p-4 rounded-xl flex items-center justify-between group hover:border-primary/30 transition-all shadow-sm cursor-pointer"
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className={`p-2 rounded-lg ${item.status === 'redeemed' ? 'bg-slate-800 text-slate-500' : 'bg-accent/10 text-accent'}`}>
@@ -319,12 +335,19 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
                                             <p className={`font-bold ${item.status === 'redeemed' ? 'text-slate-500 line-through' : 'text-white'}`}>
                                                 {item.title}
                                             </p>
-                                            <p className="text-xs font-mono text-slate-500 uppercase tracking-tighter">{item.code}</p>
+                                            <div className="flex flex-col gap-1 mt-1">
+                                                <p className="text-xs font-mono text-slate-500 uppercase tracking-tighter">{item.code}</p>
+                                                {item.status === 'available' && item.expiryDate && (
+                                                    <CountdownTimer expiryDate={item.expiryDate} className="!text-[10px] opacity-80" />
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="text-right flex items-center gap-4">
                                         <div className="hidden sm:block">
-                                            <p className="text-[10px] text-slate-500 uppercase font-bold text-right">{item.date}</p>
+                                            <p className="text-[10px] text-slate-500 uppercase font-bold text-right">
+                                                {item.status === 'available' && item.expiryDate ? 'GIFT' : item.date}
+                                            </p>
                                             <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${item.status === 'redeemed'
                                                 ? 'bg-slate-800 text-slate-600'
                                                 : 'bg-success/10 text-success'
@@ -342,15 +365,99 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
             </div>
 
             {/* Footer Actions */}
-            <div className="p-8 border-t border-slate-800 bg-slate-900/30 flex gap-4">
+            <div className="p-8 border-t border-slate-800 bg-slate-900/30 flex flex-col gap-4">
                 <button
                     onClick={onBackToScratch}
-                    className="flex-1 bg-primary hover:bg-primaryDark text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 group"
+                    disabled={hasScratchedToday}
+                    className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group ${hasScratchedToday
+                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                        : 'bg-primary hover:bg-primaryDark text-white shadow-primary/20'}`}
                 >
-                    Try Your Luck Today
-                    <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                    {hasScratchedToday ? 'Come Back Tomorrow!' : 'Try Your Luck Today'}
+                    {!hasScratchedToday && <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />}
                 </button>
+                {hasScratchedToday && (
+                    <p className="text-[10px] text-center text-slate-500 font-bold uppercase tracking-widest animate-pulse">
+                        You've already used your daily scratch card!
+                    </p>
+                )}
             </div>
+
+            {/* Offer Detail Modal */}
+            <AnimatePresence>
+                {selectedOfferDetail && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setSelectedOfferDetail(null)}
+                            className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="glass-card relative w-full max-w-sm p-8 rounded-3xl text-center shadow-2xl border border-slate-800"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex justify-center mb-6">
+                                <div className={`p-4 rounded-full ${selectedOfferDetail.status === 'redeemed' ? 'bg-slate-800' : 'bg-success/20'}`}>
+                                    <CheckCircle2 className={`w-12 h-12 ${selectedOfferDetail.status === 'redeemed' ? 'text-slate-500' : 'text-success'}`} />
+                                </div>
+                            </div>
+
+                            <h2 className="text-2xl font-bold text-white mb-2">
+                                {selectedOfferDetail.status === 'redeemed' ? 'Offer Summary' : 'Congratulations!'}
+                            </h2>
+                            <p className="text-slate-400 mb-8 lowercase first-letter:uppercase">
+                                {selectedOfferDetail.status === 'redeemed' ? 'This offer has been successfully redeemed' : 'You have an active exclusive offer'}
+                            </p>
+
+                            <div className={`bg-slate-900/80 border-2 border-dashed rounded-2xl p-6 mb-8 ${selectedOfferDetail.status === 'redeemed' ? 'border-slate-800' : 'border-accent/40'}`}>
+                                <h3 className={`text-2xl font-black mb-4 uppercase tracking-wider ${selectedOfferDetail.status === 'redeemed' ? 'text-slate-600' : 'text-accent'}`}>
+                                    {selectedOfferDetail.title}
+                                </h3>
+                                <div className="bg-black/40 rounded-xl p-4 flex items-center justify-between gap-4">
+                                    <code className={`text-lg font-mono font-bold tracking-widest ${selectedOfferDetail.status === 'redeemed' ? 'text-slate-700' : 'text-primary'}`}>
+                                        {selectedOfferDetail.code}
+                                    </code>
+                                    <button
+                                        onClick={() => copyToClipboard(selectedOfferDetail.code)}
+                                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                        title="Copy Code"
+                                    >
+                                        <Copy className="w-5 h-5 text-slate-400" />
+                                    </button>
+                                </div>
+                                {selectedOfferDetail.status === 'available' && selectedOfferDetail.expiryDate && (
+                                    <div className="mt-4 flex justify-center">
+                                        <CountdownTimer expiryDate={selectedOfferDetail.expiryDate} />
+                                    </div>
+                                )}
+                                <p className="text-[10px] text-slate-500 mt-4 font-bold uppercase tracking-widest">
+                                    {selectedOfferDetail.status === 'redeemed' ? `Redeemed on ${selectedOfferDetail.date}` : (selectedOfferDetail.expiryDate ? `Ends at ${new Date(selectedOfferDetail.expiryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} on ${new Date(selectedOfferDetail.expiryDate).toLocaleDateString()}` : `Valid until ${selectedOfferDetail.date}`)}
+                                </p>
+                            </div>
+
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setSelectedOfferDetail(null)}
+                                    className="flex-1 bg-primary hover:bg-primaryDark text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-primary/20"
+                                >
+                                    Got it
+                                </button>
+                                <button
+                                    onClick={() => handleShare(selectedOfferDetail)}
+                                    className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all"
+                                >
+                                    <Share2 className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };

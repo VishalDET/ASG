@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Power, Percent, Users, Calendar, X, Target, Info, TrendingUp, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Power, Percent, Users, Calendar, X, Target, Info, TrendingUp, Loader2, Download, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Offer, TARGETS } from '../../types/offer';
 import { offerService } from '../../services/offerService';
 import OfferAnalyticsView from './OfferAnalyticsView';
+import Papa from 'papaparse';
 
 
+
+import toast from 'react-hot-toast';
 
 const TARGET_ICONS = {
     all: Users,
@@ -18,16 +21,20 @@ const OfferManager: React.FC = () => {
     const [offers, setOffers] = useState<Offer[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [importPreviewData, setImportPreviewData] = useState<any[]>([]);
     const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
     const [viewingStats, setViewingStats] = useState<Offer | null>(null);
+    const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
+    const fetchOffers = async () => {
+        setLoading(true);
+        const data = await offerService.getAllOffers();
+        setOffers(data);
+        setLoading(false);
+    };
 
     useEffect(() => {
-        const fetchOffers = async () => {
-            setLoading(true);
-            const data = await offerService.getAllOffers();
-            setOffers(data);
-            setLoading(false);
-        };
         fetchOffers();
     }, []);
 
@@ -61,26 +68,152 @@ const OfferManager: React.FC = () => {
         setIsModalOpen(true);
     };
 
-    const handleSave = () => {
-        if (editingOffer) {
-            setOffers(offers.map(o => o.id === editingOffer.id ? { ...o, ...formData } as Offer : o));
-        } else {
-            const newOffer: Offer = {
-                ...formData as Offer,
-                id: Math.max(0, ...offers.map(o => o.id)) + 1,
-                redemptions: 0,
-                allotted: 0,
-                revealed: 0,
-                history: [],
-                utilizations: [],
-            };
-            setOffers([...offers, newOffer]);
+    const handleSave = async () => {
+        const isEditing = !!editingOffer;
+        const offerPayload = {
+            id: isEditing ? editingOffer.id : 0,
+            title: formData.title || '',
+            description: formData.description || '',
+            weight: formData.weight || 0,
+            status: formData.status || 'active',
+            targeting: formData.targeting || 'all',
+            startDate: formData.startDate ? new Date(formData.startDate).toISOString() : new Date().toISOString(),
+            endDate: formData.endDate ? new Date(formData.endDate).toISOString() : new Date().toISOString(),
+            spType: isEditing ? "U" : "C"
+        };
+
+        const loadingToast = toast.loading(isEditing ? 'Updating offer...' : 'Creating offer...');
+
+        try {
+            const response = await offerService.manageOffer(offerPayload);
+
+            if (response.success) {
+                toast.success(isEditing ? 'Offer updated successfully!' : 'Offer created successfully!', { id: loadingToast });
+                await fetchOffers();
+                setIsModalOpen(false);
+            } else {
+                toast.error(response.message || 'Failed to save offer', { id: loadingToast });
+            }
+        } catch (error) {
+            console.error('Save error:', error);
+            toast.error('An error occurred while saving', { id: loadingToast });
         }
-        setIsModalOpen(false);
+    };
+
+    const downloadTemplate = () => {
+        const headers = ["Title", "Description", "Weight", "Status", "Targeting", "StartDate", "EndDate"];
+        const sampleRow = ["Sample Offer", "Description of offer", "20", "active", "all", new Date().toISOString().split('T')[0], new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]];
+
+        const csvContent = [headers.join(","), sampleRow.join(",")].join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "offer_template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                const rows = results.data as any[];
+                if (rows.length === 0) {
+                    toast.error('The CSV file is empty.');
+                    return;
+                }
+                setImportPreviewData(rows);
+            },
+            error: (error: any) => {
+                toast.error(`Error parsing CSV: ${error.message}`);
+            }
+        });
+
+        // Reset file input so the same file can be selected again
+        if (e.target) e.target.value = '';
+    };
+
+    const handleConfirmImport = async () => {
+        if (importPreviewData.length === 0) return;
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        const loadingToast = toast.loading(`Importing ${importPreviewData.length} offers...`);
+
+        for (const row of importPreviewData) {
+            try {
+                const offerPayload = {
+                    id: 0,
+                    title: row.Title || '',
+                    description: row.Description || '',
+                    weight: parseInt(row.Weight) || 20,
+                    status: row.Status || 'active',
+                    targeting: row.Targeting || 'all',
+                    startDate: row.StartDate ? new Date(row.StartDate).toISOString() : new Date().toISOString(),
+                    endDate: row.EndDate ? new Date(row.EndDate).toISOString() : new Date().toISOString(),
+                    spType: "C"
+                };
+                const response = await offerService.manageOffer(offerPayload);
+                if (response.success) successCount++;
+                else errorCount++;
+            } catch (error) {
+                errorCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            toast.success(`Successfully imported ${successCount} offers!`, { id: loadingToast });
+            fetchOffers();
+        }
+        if (errorCount > 0) {
+            toast.error(`Failed to import ${errorCount} offers.`, { id: loadingToast });
+        }
+
+        setIsImportModalOpen(false);
+        setImportPreviewData([]);
     };
 
     const handleDelete = (id: number) => {
-        setOffers(offers.filter(o => o.id !== id));
+        setDeleteConfirmId(id);
+    };
+
+    const confirmDelete = async () => {
+        if (deleteConfirmId === null) return;
+        const id = deleteConfirmId;
+        setDeleteConfirmId(null);
+
+        const loadingToast = toast.loading('Deleting offer...');
+        try {
+            const offerPayload = {
+                id,
+                title: "",
+                description: "",
+                weight: 0,
+                status: "",
+                targeting: "",
+                startDate: new Date().toISOString(),
+                endDate: new Date().toISOString(),
+                spType: "D"
+            };
+
+            const response = await offerService.manageOffer(offerPayload);
+            if (response.success) {
+                toast.success('Offer deleted successfully!', { id: loadingToast });
+                await fetchOffers();
+            } else {
+                toast.error(response.message || 'Failed to delete offer', { id: loadingToast });
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            toast.error('An error occurred while deleting', { id: loadingToast });
+        }
     };
 
     const toggleStatus = (id: number) => {
@@ -99,19 +232,32 @@ const OfferManager: React.FC = () => {
     }
 
     return (
-        <div className="p-8 space-y-6 relative min-h-screen">
+        <div className="p-8 space-y-6 relative min-h-screen max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-white">Offer Management</h1>
                     <p className="text-slate-400 text-sm">Create and control scratch card rewards with precision targeting</p>
                 </div>
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="flex items-center gap-2 bg-brand-orange hover:bg-brand-orange/90 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-brand-orange/20"
-                >
-                    <Plus size={20} />
-                    Create New Offer
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        onClick={() => {
+                            setIsImportModalOpen(true);
+                            setImportPreviewData([]);
+                        }}
+                        className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl font-bold transition-all border border-slate-700 cursor-pointer"
+                    >
+                        <Upload size={18} />
+                        <span className="hidden sm:inline">Import Bulk Offers</span>
+                    </button>
+
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="flex items-center gap-2 bg-brand-orange hover:bg-brand-orange/90 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-brand-orange/20"
+                    >
+                        <Plus size={20} />
+                        <span className="hidden sm:inline">New Offer</span>
+                    </button>
+                </div>
             </div>
 
             {loading ? (
@@ -373,6 +519,175 @@ const OfferManager: React.FC = () => {
                                     className="px-8 py-2.5 rounded-xl font-bold bg-brand-orange text-white hover:bg-brand-orange/90 shadow-lg shadow-brand-orange/20 transition-all"
                                 >
                                     {editingOffer ? 'Update Offer' : 'Save Offer'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* CSV Import Modal */}
+            <AnimatePresence>
+                {isImportModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsImportModalOpen(false)}
+                            className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                        >
+                            <div className="flex justify-between items-center p-6 border-b border-slate-800 bg-slate-900/50 shrink-0 backdrop-blur-md">
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">Import Offers via CSV</h2>
+                                    <p className="text-slate-400 text-xs mt-1">Upload a CSV file or download the template</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={downloadTemplate}
+                                        className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl font-bold transition-all border border-slate-700 text-sm"
+                                    >
+                                        <Download size={16} />
+                                        Template
+                                    </button>
+                                    <button
+                                        onClick={() => setIsImportModalOpen(false)}
+                                        className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="p-8 flex-1 overflow-y-auto space-y-6">
+                                {/* Upload Zone */}
+                                <div className="border-2 border-dashed border-slate-700 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-slate-900/50">
+                                    <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 mb-4">
+                                        <Upload size={32} />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-white mb-2">Upload CSV File</h3>
+                                    <p className="text-slate-400 text-sm mb-6 max-w-md">
+                                        Ensure your CSV headers exactly match the template (Title, Description, Weight, Status, Targeting, StartDate, EndDate).
+                                    </p>
+                                    <label className="flex items-center gap-2 bg-brand-orange hover:bg-brand-orange/90 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-brand-orange/20 cursor-pointer">
+                                        Select File
+                                        <input
+                                            type="file"
+                                            accept=".csv"
+                                            className="hidden"
+                                            onChange={handleFileUpload}
+                                        />
+                                    </label>
+                                </div>
+
+                                {/* Preview Table */}
+                                {importPreviewData.length > 0 && (
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-end">
+                                            <div>
+                                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Preview</h3>
+                                                <p className="text-xs text-slate-500">Found {importPreviewData.length} records to import</p>
+                                            </div>
+                                        </div>
+                                        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/50">
+                                            <table className="w-full text-left whitespace-nowrap">
+                                                <thead>
+                                                    <tr className="bg-slate-900 border-b border-slate-800">
+                                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-500">Title</th>
+                                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-500">Weight</th>
+                                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-500">Status</th>
+                                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-500">Targeting</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-800/50">
+                                                    {importPreviewData.slice(0, 5).map((row, i) => (
+                                                        <tr key={i} className="hover:bg-slate-900/50 transition-colors">
+                                                            <td className="px-6 py-3 text-sm text-white font-medium">{row.Title || '-'}</td>
+                                                            <td className="px-6 py-3 text-sm text-slate-400 font-mono">{row.Weight || '20'}%</td>
+                                                            <td className="px-6 py-3">
+                                                                <span className="px-2 py-1 rounded bg-slate-800 text-xs text-slate-300 font-medium">
+                                                                    {row.Status || 'active'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-3 text-sm text-slate-400">{row.Targeting || 'all'}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                            {importPreviewData.length > 5 && (
+                                                <div className="p-3 text-center text-xs text-slate-500 font-medium border-t border-slate-800 bg-slate-900 rounded-b-2xl">
+                                                    And {importPreviewData.length - 5} more records...
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-6 bg-slate-800/30 border-t border-slate-800 shrink-0 flex justify-end gap-4">
+                                <button
+                                    onClick={() => setIsImportModalOpen(false)}
+                                    className="px-6 py-2.5 rounded-xl font-bold text-slate-400 hover:text-white transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleConfirmImport}
+                                    disabled={importPreviewData.length === 0}
+                                    className="px-8 py-2.5 rounded-xl font-bold bg-brand-orange text-white hover:bg-brand-orange/90 shadow-lg shadow-brand-orange/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Confirm & Import
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {deleteConfirmId !== null && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setDeleteConfirmId(null)}
+                            className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-8 text-center space-y-4">
+                                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mx-auto mb-6">
+                                    <Trash2 size={32} />
+                                </div>
+                                <h3 className="text-xl font-bold text-white">Delete Offer?</h3>
+                                <p className="text-slate-400 text-sm">
+                                    Are you sure you want to delete this offer? This action cannot be undone.
+                                </p>
+                            </div>
+                            <div className="p-6 bg-slate-800/30 border-t border-slate-800 shrink-0 flex justify-center gap-4">
+                                <button
+                                    onClick={() => setDeleteConfirmId(null)}
+                                    className="px-6 py-2.5 rounded-xl font-bold text-slate-400 hover:text-white transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="px-8 py-2.5 rounded-xl font-bold bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 text-white transition-all transform hover:scale-105"
+                                >
+                                    Delete
                                 </button>
                             </div>
                         </motion.div>

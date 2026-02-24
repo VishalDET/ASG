@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     BarChart3,
     X,
@@ -10,27 +10,57 @@ import {
     Users,
     Target,
     Info,
-    Calendar
+    Calendar,
+    Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Offer } from '../../types/offer';
+import { offerService } from '../../services/offerService';
 
 interface OfferAnalyticsViewProps {
-    offer: Offer;
+    offer: Offer; // Preserves the preliminary object for passing the ID down
     onBack: () => void;
 }
 
-const TARGET_ICONS = {
+const TARGET_ICONS: Record<string, any> = {
     all: Users,
     new: Target,
     frequent: Info,
     inactive: Calendar,
 };
 
-const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }) => {
+const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialOffer, onBack }) => {
     const [userSearchTerm, setUserSearchTerm] = useState('');
-    const TargetIcon = TARGET_ICONS[offer.targeting] || Info;
+    const [offerData, setOfferData] = useState<Offer | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        const fetchOfferDetails = async () => {
+            setIsLoading(true);
+            const data = await offerService.getOfferAnalytics(initialOffer.id);
+            setOfferData(data);
+            setIsLoading(false);
+        };
+        fetchOfferDetails();
+    }, [initialOffer.id]);
+
+    const activeOffer = offerData || initialOffer;
+    const TargetIcon = TARGET_ICONS[activeOffer.targeting || 'all'] || Info;
+
+    if (isLoading) {
+        return (
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center min-h-[400px] gap-4"
+            >
+                <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                <p className="text-slate-400 font-medium tracking-wide">Fetching Live Analytics...</p>
+            </motion.div>
+        );
+    }
 
     return (
         <motion.div
@@ -54,16 +84,16 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                         </div>
                         <div>
                             <div className="flex items-center gap-3">
-                                <h2 className="text-3xl font-black text-white tracking-tight">{offer.title}</h2>
+                                <h2 className="text-3xl font-black text-white tracking-tight">{activeOffer.title}</h2>
                                 <span className="px-3 py-1 rounded-full bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-widest border border-slate-700 ring-1 ring-white/5">
-                                    {offer.status}
+                                    {activeOffer.status}
                                 </span>
                             </div>
                             <p className="text-slate-400 text-sm mt-2 flex items-center gap-2 font-medium">
                                 <TargetIcon size={16} className="text-info" />
-                                Targeting: {offer.targeting}
+                                Targeting: {activeOffer.targeting}
                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-700 mx-1" />
-                                Active since {new Date(offer.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                Active since {(activeOffer as any).startDate ? new Date((activeOffer as any).startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                             </p>
                         </div>
                     </div>
@@ -72,7 +102,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                 <div className="flex gap-3">
                     <div className="text-right hidden sm:block">
                         <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">Total Impact</p>
-                        <p className="text-2xl font-black text-white">{offer.redemptions} Redemptions</p>
+                        <p className="text-2xl font-black text-white">{activeOffer.redemptions || 0} Redemptions</p>
                     </div>
                 </div>
             </div>
@@ -80,10 +110,10 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Allotted', value: offer.allotted, sub: 'cards', color: 'text-white', bg: 'bg-slate-950/40' },
-                    { label: 'Revealed', value: offer.revealed, sub: `(${Math.round(offer.revealed / offer.allotted * 100)}%)`, color: 'text-info', bg: 'bg-info/5 border-info/10' },
-                    { label: 'Redeemed', value: offer.redemptions, sub: `(${Math.round(offer.redemptions / offer.revealed * 100)}%)`, color: 'text-success', bg: 'bg-success/5 border-success/10' },
-                    { label: 'Win Chance', value: `${offer.weight}%`, sub: 'probability', color: 'text-accent', bg: 'bg-accent/5 border-accent/10' },
+                    { label: 'Allotted', value: activeOffer.allotted || 0, sub: 'cards', color: 'text-white', bg: 'bg-slate-950/40' },
+                    { label: 'Revealed', value: activeOffer.revealed || 0, sub: `(${Math.round(((activeOffer.revealed || 0) / (activeOffer.allotted || 1)) * 100) || 0}%)`, color: 'text-info', bg: 'bg-info/5 border-info/10' },
+                    { label: 'Redeemed', value: activeOffer.redemptions || 0, sub: `(${Math.round(((activeOffer.redemptions || 0) / (activeOffer.revealed || 1)) * 100) || 0}%)`, color: 'text-success', bg: 'bg-success/5 border-success/10' },
+                    { label: 'Win Chance', value: `${activeOffer.weight}%`, sub: 'probability', color: 'text-accent', bg: 'bg-accent/5 border-accent/10' },
                 ].map((stat, i) => (
                     <motion.div
                         key={i}
@@ -110,9 +140,9 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                     </div>
                     <div className="space-y-6">
                         {[
-                            { step: 'Allotted', value: `${offer.allotted} Cards Created`, percent: 100, color: 'bg-slate-700/50', label: 'Step 1' },
-                            { step: 'Scratched', value: `${offer.revealed} Actually Scratched`, percent: (offer.revealed / offer.allotted) * 100, color: 'bg-info/30', label: 'Step 2' },
-                            { step: 'Redeemed', value: `${offer.redemptions} Final Conversions`, percent: (offer.redemptions / offer.allotted) * 100, color: 'bg-success/30', label: 'Step 3' },
+                            { step: 'Allotted', value: `${activeOffer.allotted || 0} Cards Created`, percent: 100, color: 'bg-slate-700/50', label: 'Step 1' },
+                            { step: 'Scratched', value: `${activeOffer.revealed || 0} Actually Scratched`, percent: ((activeOffer.revealed || 0) / (activeOffer.allotted || 1)) * 100, color: 'bg-info/30', label: 'Step 2' },
+                            { step: 'Redeemed', value: `${activeOffer.redemptions || 0} Final Conversions`, percent: ((activeOffer.redemptions || 0) / (activeOffer.allotted || 1)) * 100, color: 'bg-success/30', label: 'Step 3' },
                         ].map((step, i) => (
                             <React.Fragment key={i}>
                                 <div className="relative pt-6">
@@ -151,7 +181,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                     </div>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={offer.history}>
+                            <BarChart data={activeOffer.history || []}>
                                 <defs>
                                     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="0%" stopColor="#D82818" stopOpacity={1} />
@@ -186,7 +216,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                                         padding: '12px 16px'
                                     }}
                                     itemStyle={{ color: '#D82818', fontSize: '14px', fontWeight: '900' }}
-                                    labelStyle={{ color: '#64748b', fontSize: '10px', fontWeight: '800', marginBottom: '8px', textTransform: 'uppercase', tracking: '0.1em' }}
+                                    labelStyle={{ color: '#64748b', fontSize: '10px', fontWeight: '800', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em' }}
                                 />
                                 <Bar dataKey="value" fill="url(#barGradient)" radius={[8, 8, 4, 4]} barSize={40} />
                             </BarChart>
@@ -225,7 +255,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800/30">
-                            {offer.utilizations
+                            {(activeOffer.utilizations || [])
                                 .filter(u =>
                                     u.userName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
                                     u.phone.includes(userSearchTerm)
@@ -262,7 +292,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer, onBack }
                                         </td>
                                     </motion.tr>
                                 ))}
-                            {offer.utilizations.length === 0 && (
+                            {(!activeOffer.utilizations || activeOffer.utilizations.length === 0) && (
                                 <tr>
                                     <td colSpan={4} className="px-8 py-16 text-center text-slate-600 italic font-medium">
                                         <TrendingUp size={48} className="mx-auto mb-4 opacity-10" />

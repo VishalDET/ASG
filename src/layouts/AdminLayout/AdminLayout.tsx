@@ -21,7 +21,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                 onLogout={onLogout}
             />
 
-            <main className="flex-1 flex flex-col h-screen overflow-hidden">
+            <main className="flex-1 flex flex-col h-screen overflow-hidden w-full">
                 <Header
                     userName="Vishal Admin"
                     userRole="Superadmin"

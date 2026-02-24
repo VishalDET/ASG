@@ -7,6 +7,7 @@ import CustomerList from '../components/Admin/CustomerList';
 import OfferManager from '../components/Admin/OfferManager';
 import RedemptionTerminal from '../components/Admin/RedemptionTerminal';
 import AdminProfile from '../components/Admin/AdminProfile';
+import AdminUserManager from '../components/Admin/AdminUserManager';
 import AdminLayout from '../layouts/AdminLayout/AdminLayout';
 
 interface AdminDashboardProps {
@@ -71,6 +72,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                             className="h-full overflow-y-auto"
                         >
                             <AdminProfile />
+                        </motion.div>
+                    } />
+                    <Route path="users" element={
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="h-full overflow-y-auto"
+                        >
+                            <AdminUserManager />
                         </motion.div>
                     } />
                 </Routes>
