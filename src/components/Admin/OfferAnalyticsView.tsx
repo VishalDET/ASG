@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
     BarChart3,
-    X,
     ChevronRight,
     Search,
     User,
@@ -38,14 +37,68 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
     useEffect(() => {
         const fetchOfferDetails = async () => {
             setIsLoading(true);
-            const data = await offerService.getOfferAnalytics(initialOffer.id);
-            setOfferData(data);
-            setIsLoading(false);
+            try {
+                const [analyticsData, utilizationData] = await Promise.all([
+                    offerService.getOfferAnalytics(initialOffer.id),
+                    offerService.getOfferUtilization(initialOffer.id)
+                ]);
+
+                if (analyticsData) {
+                    setOfferData({
+                        ...analyticsData,
+                        utilizations: utilizationData
+                    });
+                }
+            } catch (error) {
+                console.error("Failed to fetch analytics or utilization:", error);
+            } finally {
+                setIsLoading(false);
+            }
         };
         fetchOfferDetails();
     }, [initialOffer.id]);
 
     const activeOffer = offerData || initialOffer;
+    const utilizations = activeOffer.utilizations || [];
+
+    // Calculate live stats from utilizations
+    const liveRevealed = utilizations.length;
+    const liveRedeemed = utilizations.filter(u => u.status === 'redeemed').length;
+    const liveAllotted = activeOffer.allotted || 0;
+
+    // Generate dynamic history if not provided by API
+    const generateHistory = () => {
+        if (activeOffer.history && activeOffer.history.length > 0) return activeOffer.history;
+
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const last7Days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (6 - i));
+            return {
+                name: days[d.getDay()],
+                date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                value: 0
+            };
+        });
+
+        utilizations.forEach(u => {
+            const dateStr = u.redeemedAt.split(' (')[0]; // Extract "Feb 24, 2026"
+            try {
+                const uDate = new Date(dateStr);
+                const dayName = days[uDate.getDay()];
+                const dayMatch = last7Days.find(d => d.name === dayName);
+                if (dayMatch && u.status === 'redeemed') {
+                    dayMatch.value++;
+                }
+            } catch (e) {
+                // Ignore parsing errors
+            }
+        });
+
+        return last7Days;
+    };
+
+    const chartData = generateHistory();
     const TargetIcon = TARGET_ICONS[activeOffer.targeting || 'all'] || Info;
 
     if (isLoading) {
@@ -67,7 +120,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-8 pb-12"
+            className="space-y-8 pb-12 max-w-7xl mx-auto"
         >
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-slate-900/40 p-8 rounded-3xl border border-slate-800/50 backdrop-blur-md">
@@ -102,7 +155,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
                 <div className="flex gap-3">
                     <div className="text-right hidden sm:block">
                         <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">Total Impact</p>
-                        <p className="text-2xl font-black text-white">{activeOffer.redemptions || 0} Redemptions</p>
+                        <p className="text-2xl font-black text-white">{liveRedeemed} Redemptions</p>
                     </div>
                 </div>
             </div>
@@ -110,9 +163,9 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Allotted', value: activeOffer.allotted || 0, sub: 'cards', color: 'text-white', bg: 'bg-slate-950/40' },
-                    { label: 'Revealed', value: activeOffer.revealed || 0, sub: `(${Math.round(((activeOffer.revealed || 0) / (activeOffer.allotted || 1)) * 100) || 0}%)`, color: 'text-info', bg: 'bg-info/5 border-info/10' },
-                    { label: 'Redeemed', value: activeOffer.redemptions || 0, sub: `(${Math.round(((activeOffer.redemptions || 0) / (activeOffer.revealed || 1)) * 100) || 0}%)`, color: 'text-success', bg: 'bg-success/5 border-success/10' },
+                    { label: 'Allotted', value: liveAllotted, sub: 'cards', color: 'text-white', bg: 'bg-slate-950/40' },
+                    { label: 'Revealed', value: liveRevealed, sub: `(${Math.round((liveRevealed / (liveAllotted || 1)) * 100) || 0}%)`, color: 'text-info', bg: 'bg-info/5 border-info/10' },
+                    { label: 'Redeemed', value: liveRedeemed, sub: `(${Math.round((liveRedeemed / (liveRevealed || 1)) * 100) || 0}%)`, color: 'text-success', bg: 'bg-success/5 border-success/10' },
                     { label: 'Win Chance', value: `${activeOffer.weight}%`, sub: 'probability', color: 'text-accent', bg: 'bg-accent/5 border-accent/10' },
                 ].map((stat, i) => (
                     <motion.div
@@ -140,9 +193,9 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
                     </div>
                     <div className="space-y-6">
                         {[
-                            { step: 'Allotted', value: `${activeOffer.allotted || 0} Cards Created`, percent: 100, color: 'bg-slate-700/50', label: 'Step 1' },
-                            { step: 'Scratched', value: `${activeOffer.revealed || 0} Actually Scratched`, percent: ((activeOffer.revealed || 0) / (activeOffer.allotted || 1)) * 100, color: 'bg-info/30', label: 'Step 2' },
-                            { step: 'Redeemed', value: `${activeOffer.redemptions || 0} Final Conversions`, percent: ((activeOffer.redemptions || 0) / (activeOffer.allotted || 1)) * 100, color: 'bg-success/30', label: 'Step 3' },
+                            { step: 'Allotted', value: `${liveAllotted} Cards Created`, percent: 100, color: 'bg-slate-700/50', label: 'Step 1' },
+                            { step: 'Scratched', value: `${liveRevealed} Actually Scratched`, percent: (liveRevealed / (liveAllotted || 1)) * 100, color: 'bg-info/30', label: 'Step 2' },
+                            { step: 'Redeemed', value: `${liveRedeemed} Final Conversions`, percent: (liveRedeemed / (liveAllotted || 1)) * 100, color: 'bg-success/30', label: 'Step 3' },
                         ].map((step, i) => (
                             <React.Fragment key={i}>
                                 <div className="relative pt-6">
@@ -181,11 +234,11 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
                     </div>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={activeOffer.history || []}>
+                            <BarChart data={chartData}>
                                 <defs>
                                     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#D82818" stopOpacity={1} />
-                                        <stop offset="100%" stopColor="#D82818" stopOpacity={0.6} />
+                                        <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
+                                        <stop offset="100%" stopColor="#ef4444" stopOpacity={0.6} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} opacity={0.5} />
@@ -215,7 +268,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
                                         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
                                         padding: '12px 16px'
                                     }}
-                                    itemStyle={{ color: '#D82818', fontSize: '14px', fontWeight: '900' }}
+                                    itemStyle={{ color: '#ef4444', fontSize: '14px', fontWeight: '900' }}
                                     labelStyle={{ color: '#64748b', fontSize: '10px', fontWeight: '800', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em' }}
                                 />
                                 <Bar dataKey="value" fill="url(#barGradient)" radius={[8, 8, 4, 4]} barSize={40} />
@@ -257,12 +310,12 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
                         <tbody className="divide-y divide-slate-800/30">
                             {(activeOffer.utilizations || [])
                                 .filter(u =>
-                                    u.userName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-                                    u.phone.includes(userSearchTerm)
+                                    (u.userName || '').toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+                                    (u.phone || '').includes(userSearchTerm)
                                 )
                                 .map((util, i) => (
                                     <motion.tr
-                                        key={util.id}
+                                        key={util.id || i}
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: i * 0.05 }}
@@ -273,20 +326,25 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
                                                 <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform shadow-lg shadow-primary/5">
                                                     <User size={18} />
                                                 </div>
-                                                <span className="font-bold text-white tracking-tight">{util.userName}</span>
+                                                <span className="font-bold text-white tracking-tight">{util.userName || 'Anonymous'}</span>
                                             </div>
                                         </td>
                                         <td className="px-8 py-5">
-                                            <span className="text-slate-400 font-mono text-xs bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50">{util.phone}</span>
+                                            <span className="text-slate-400 font-mono text-xs bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50">{util.phone || 'N/A'}</span>
                                         </td>
                                         <td className="px-8 py-5">
                                             <div className="text-slate-400 text-sm flex items-center gap-2">
                                                 <Calendar size={14} className="text-slate-600" />
-                                                {util.redeemedAt}
+                                                {util.redeemedAt || 'N/A'}
                                             </div>
                                         </td>
                                         <td className="px-8 py-5 text-right">
-                                            <span className="px-4 py-1.5 rounded-xl bg-success/10 text-success font-black text-[10px] uppercase tracking-widest border border-success/20 shadow-lg shadow-success/5">
+                                            <span className={`px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest border shadow-lg ${util.status === 'redeemed'
+                                                ? 'bg-success/10 text-success border-success/20 shadow-success/5'
+                                                : util.status === 'Generated'
+                                                    ? 'bg-info/10 text-info border-info/20 shadow-info/5'
+                                                    : 'bg-slate-800/50 text-slate-400 border-slate-700/50 shadow-slate-900/10'
+                                                }`}>
                                                 {util.status}
                                             </span>
                                         </td>

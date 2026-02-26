@@ -16,7 +16,7 @@ export interface Offer {
         userName: string;
         phone: string;
         redeemedAt: string;
-        status: 'redeemed' | 'expired';
+        status: 'redeemed' | 'expired' | 'Generated';
     }[];
 }
 

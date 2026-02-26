@@ -38,9 +38,9 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="p-6 flex items-center justify-between">
                 {isSidebarOpen && (
                     <div className="flex items-center gap-3">
-                        <img src="/logo.png" alt="ASG Logo" className="h-8 w-auto" />
+                        <img src="/asg.png" alt="ASG Logo" className="h-12 w-auto" />
                         {/* <div className="w-8 h-8 bg-brand-orange rounded-lg flex items-center justify-center font-bold text-white">A</div> */}
-                        <span className="font-bold text-xl tracking-tight">ASG Admin</span>
+                        <span className="font-bold text-xl tracking-tight">Admin</span>
                     </div>
                 )}
                 <button

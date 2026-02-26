@@ -35,6 +35,22 @@ export const offerService = {
         }
     },
 
+    async getOfferUtilization(id: number): Promise<any[]> {
+        try {
+            const response = await fetch(`${API_URL}/Offer/GetUtilization/${id}`);
+            if (!response.ok) return [];
+
+            const result = await response.json();
+            if (result.success && result.data) {
+                return result.data;
+            }
+            return [];
+        } catch (error) {
+            console.error(`Error fetching utilization for offer ${id}:`, error);
+            return [];
+        }
+    },
+
     async manageOffer(offerData: any): Promise<{ success: boolean; message: string; data?: any }> {
         try {
             const response = await fetch(`${API_URL}/Offer/ManageOffer`, {

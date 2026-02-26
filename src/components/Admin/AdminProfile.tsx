@@ -1,16 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Shield, KeyRound, Building, Phone } from 'lucide-react';
+import { User, Mail, Shield, KeyRound, Building, Phone, Loader2 } from 'lucide-react';
+import { adminService, AdminProfile as IAdminProfile } from '../../services/adminService';
 
 const AdminProfile: React.FC = () => {
-    // Mock current admin profile details
-    const adminDetails = {
-        name: 'Vishal Admin',
-        role: 'Superadmin',
-        email: 'admin@asg.com',
-        phone: '+1 (555) 123-4567',
-        department: 'Corporate IT',
-        initial: 'V'
+    const [adminDetails, setAdminDetails] = useState<IAdminProfile | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            setIsLoading(true);
+            const session = sessionStorage.getItem('adminSession');
+            if (session) {
+                const { email } = JSON.parse(session);
+                if (email) {
+                    const response = await adminService.getAdminByEmail(email);
+                    if (response.success && response.data) {
+                        setAdminDetails(response.data);
+                    }
+                }
+            }
+            setIsLoading(false);
+        };
+        fetchProfile();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                <p className="text-slate-400 font-medium tracking-wide">Loading Profile...</p>
+            </div>
+        );
+    }
+
+    if (!adminDetails) {
+        return (
+            <div className="p-8 text-center text-slate-500">
+                Failed to load profile details. Please try again.
+            </div>
+        );
+    }
+
+    // Derived details for UI
+    const uiDetails = {
+        initial: (adminDetails.name || 'A').charAt(0).toUpperCase(),
+        department: 'Administration' // Not currently in API, using default
     };
 
     return (
@@ -31,7 +66,7 @@ const AdminProfile: React.FC = () => {
                 >
                     <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col items-center text-center">
                         <div className="w-24 h-24 bg-primary/10 rounded-full border border-primary/20 flex flex-col items-center justify-center font-black text-primary text-4xl mb-4 shadow-lg shadow-primary/5">
-                            {adminDetails.initial}
+                            {uiDetails.initial}
                         </div>
                         <h2 className="text-xl font-bold text-white">{adminDetails.name}</h2>
                         <div className="flex items-center gap-2 mt-2 px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 rounded-full">
@@ -110,7 +145,7 @@ const AdminProfile: React.FC = () => {
                                 </label>
                                 <input
                                     type="text"
-                                    value={adminDetails.department}
+                                    value={uiDetails.department}
                                     disabled
                                     className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-300 cursor-not-allowed focus:outline-none"
                                 />

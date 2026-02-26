@@ -48,7 +48,7 @@ export default function UserLogin({ onVerify }: UserLoginProps) {
 
         setIsLoading(true);
         try {
-            // Wait for parent to check customer existence via API
+            // Wait for parent to handle session, visit tracking, and navigation
             await onVerify(phone);
         } catch (err) {
             setError('Verification failed. Please try again.');

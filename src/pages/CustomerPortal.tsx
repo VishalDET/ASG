@@ -87,8 +87,18 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
     const handleLogin = async (phone: string) => {
         const remoteCustomer = await customerService.getCustomerByPhone(phone);
         if (remoteCustomer) {
-            setCustomer(remoteCustomer);
-            saveSession(remoteCustomer);
+            // Record a visit for the existing user
+            await customerService.registerCustomer({
+                ...remoteCustomer,
+                spType: 'C'
+            } as any);
+
+            // Fetch fresh data after visit increment to get updated visitCount
+            const freshCustomer = await customerService.getCustomerByPhone(phone);
+            const finalCustomer = freshCustomer || remoteCustomer;
+
+            setCustomer(finalCustomer);
+            saveSession(finalCustomer);
             navigate('/portal');
             return;
         }
@@ -160,7 +170,15 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
 
     const hasScratchedToday = () => {
         const today = new Date().toLocaleDateString();
-        return history.some(item => item.date === today);
+        // Check local state history first, then check backend customer order history 
+        const localScratched = history.some(item => item.date === today);
+        const backendScratched = customer?.offerHistory?.some(h =>
+            new Date(h.revealedAt || '').toLocaleDateString() === today &&
+            h.status !== 'Redeemed' &&
+            !(h.expiryDate && new Date(h.expiryDate).getTime() < new Date().getTime())
+        ) || false;
+
+        return localScratched || backendScratched;
     };
 
     const logout = () => {
@@ -265,7 +283,6 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
                                 ...customer,
                                 offersCount: history.filter(h => h.status === 'redeemed').length
                             }}
-                            history={history}
                             onClose={logout}
                             onUpdate={handleUpdateProfile}
                             hasScratchedToday={hasScratchedToday()}

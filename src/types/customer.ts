@@ -16,6 +16,7 @@ export interface OfferHistoryEntry {
     status: string;
     revealedAt: string;
     redeemedAt: string | null;
+    expiryDate?: string;
 }
 
 export interface Customer extends CustomerRegistration {

@@ -27,7 +27,7 @@ export default function RegistrationForm({ onRegister, initialPhone = '' }: Regi
     const [gender, setGender] = useState<'male' | 'female' | 'other'>('male');
     const [dob, setDob] = useState('');
     const [foodPreference, setFoodPreference] = useState<'veg' | 'non-veg'>('veg');
-    const [alcoholPreference, setAlcoholPreference] = useState('None');
+    const [alcoholPreference, setAlcoholPreference] = useState('none');
     const [error, setError] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -45,7 +45,7 @@ export default function RegistrationForm({ onRegister, initialPhone = '' }: Regi
             return;
         }
         setError('');
-        const finalAlcoholPref = calculateAge(dob) >= 21 ? alcoholPreference : 'None';
+        const finalAlcoholPref = calculateAge(dob) >= 21 ? alcoholPreference.toLowerCase() : 'none';
         onRegister({
             name,
             phone,
@@ -192,12 +192,12 @@ export default function RegistrationForm({ onRegister, initialPhone = '' }: Regi
                         <div className="relative">
                             <Wine className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
                             <select
-                                value={alcoholPreference}
-                                onChange={(e) => setAlcoholPreference(e.target.value)}
+                                value={alcoholPreference.toLowerCase()}
+                                onChange={(e) => setAlcoholPreference(e.target.value.toLowerCase())}
                                 className={selectClass}
                             >
                                 {ALCOHOL_OPTIONS.map((opt) => (
-                                    <option key={opt} value={opt}>{opt}</option>
+                                    <option key={opt} value={opt.toLowerCase()}>{opt}</option>
                                 ))}
                             </select>
                         </div>
