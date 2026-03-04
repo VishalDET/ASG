@@ -22,7 +22,7 @@ import {
     Share2
 } from 'lucide-react';
 import { Customer } from '../../types/customer';
-import { calculateAge } from '../../utils/dateUtils';
+import { calculateAge, formatDateForInput } from '../../utils/dateUtils';
 import { customerService } from '../../services/customerService';
 
 interface OfferHistoryItem {
@@ -53,16 +53,6 @@ const ALCOHOL_OPTIONS = [
     'Cocktails',
 ];
 
-const formatDateForInput = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '';
-    try {
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return '';
-        return d.toISOString().split('T')[0];
-    } catch (e) {
-        return '';
-    }
-};
 
 const CustomerProfile: React.FC<CustomerProfileProps> = ({
     customer,
@@ -271,7 +261,7 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
                                     <>
                                         <span className="text-sm capitalize">{customer.gender || 'N/A'}</span>
                                         <span className="w-1.5 h-1.5 rounded-full bg-slate-800" />
-                                        <span className="text-sm">{customer.dob ? new Date(customer.dob).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</span>
+                                        <span className="text-sm">{customer.dob ? formatDateForInput(customer.dob) : 'N/A'}</span>
                                         <span className="text-xs font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full ml-1">
                                             Age: {currentAge}
                                         </span>

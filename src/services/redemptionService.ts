@@ -18,6 +18,7 @@ export interface ValidationData {
 export interface RedeemRequest {
     code: string;
     customerId: number;
+    customerNumber: string;
     offerId: number;
     spType: string;
 }

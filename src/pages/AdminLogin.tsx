@@ -139,7 +139,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
                     </button>
                 </form>
 
-                <div className="mt-8 pt-8 border-t border-slate-800 text-center space-y-4">
+                {/* <div className="mt-8 pt-8 border-t border-slate-800 text-center space-y-4">
                     <p className="text-slate-500 text-sm">
                         Demo Credentials: <br />
                         <span className="text-slate-300">admin@asg.com / admin123</span>
@@ -150,7 +150,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
                     >
                         Bypass Login (Dev Only)
                     </button>
-                </div>
+                </div> */}
             </motion.div>
         </div>
     );

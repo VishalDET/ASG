@@ -111,9 +111,13 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
     const handleRegister = async (data: CustomerRegistration) => {
         const result = await customerService.registerCustomer(data);
         if (result.success && result.data) {
-            setCustomer(result.data);
-            saveSession(result.data);
-            navigate('/scratch');
+            // Fetch complete customer data by phone to ensure all fields are present
+            // (registration response may not include phone, causing GetCustomers?phone=undefined)
+            const freshCustomer = await customerService.getCustomerByPhone(data.phone);
+            const finalCustomer = freshCustomer || { ...result.data, phone: data.phone };
+            setCustomer(finalCustomer);
+            saveSession(finalCustomer);
+            navigate('/portal'); // Redirect to profile first, not scratch card directly
         } else {
             console.error('Registration failed:', result.message);
         }

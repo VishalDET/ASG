@@ -1,4 +1,5 @@
 import { Customer, CustomerRegistration } from '../types/customer';
+import { localDateToISO } from '../utils/dateUtils';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -27,7 +28,7 @@ export const customerService = {
                 name: data.name,
                 phone: data.phone,
                 email: data.email,
-                dob: data.dob ? new Date(data.dob).toISOString() : null,
+                dob: data.dob ? localDateToISO(data.dob) : null,
                 gender: data.gender ? data.gender.toLowerCase() : null,
                 foodPreference: data.foodPreference ? data.foodPreference.toLowerCase() : null,
                 alcoholPreference: data.alcoholPreference ? data.alcoholPreference.toLowerCase() : null,

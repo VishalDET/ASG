@@ -12,6 +12,8 @@ export default defineConfig({
         proxy: {
             '/api': {
                 target: 'https://srijayajewellery.in/asg/api',
+                // target: 'https://localhost:44314/api/',
+
                 changeOrigin: true,
                 secure: false,
             }

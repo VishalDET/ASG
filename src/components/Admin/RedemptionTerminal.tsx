@@ -42,8 +42,9 @@ const RedemptionTerminal: React.FC = () => {
         const response = await redemptionService.redeemCoupon({
             code: code,
             customerId: validationData.customerId || 0,
+            customerNumber: validationData.customerNumber || '',
             offerId: Number(validationData.offerId) || 0,
-            spType: 'Admin' // Assuming default or could be dynamic
+            spType: 'R'
         });
 
         if (response.success) {

@@ -5,6 +5,7 @@ import { Offer, TARGETS } from '../../types/offer';
 import { offerService } from '../../services/offerService';
 import OfferAnalyticsView from './OfferAnalyticsView';
 import Papa from 'papaparse';
+import { localDateToISO, formatDateForInput } from '../../utils/dateUtils';
 
 
 
@@ -45,8 +46,8 @@ const OfferManager: React.FC = () => {
         weight: 20,
         status: 'active',
         targeting: 'all',
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        startDate: formatDateForInput(new Date().toISOString()),
+        endDate: formatDateForInput(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()),
     });
 
     const handleOpenModal = (offer?: Offer) => {
@@ -61,8 +62,8 @@ const OfferManager: React.FC = () => {
                 weight: 20,
                 status: 'active',
                 targeting: 'all',
-                startDate: new Date().toISOString().split('T')[0],
-                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                startDate: formatDateForInput(new Date().toISOString()),
+                endDate: formatDateForInput(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()),
             });
         }
         setIsModalOpen(true);
@@ -77,8 +78,8 @@ const OfferManager: React.FC = () => {
             weight: formData.weight || 0,
             status: formData.status || 'active',
             targeting: formData.targeting || 'all',
-            startDate: formData.startDate ? new Date(formData.startDate).toISOString() : new Date().toISOString(),
-            endDate: formData.endDate ? new Date(formData.endDate).toISOString() : new Date().toISOString(),
+            startDate: formData.startDate ? localDateToISO(formData.startDate) : new Date().toISOString(),
+            endDate: formData.endDate ? localDateToISO(formData.endDate) : new Date().toISOString(),
             spType: isEditing ? "U" : "C"
         };
 
@@ -156,8 +157,8 @@ const OfferManager: React.FC = () => {
                     weight: parseInt(row.Weight) || 20,
                     status: row.Status || 'active',
                     targeting: row.Targeting || 'all',
-                    startDate: row.StartDate ? new Date(row.StartDate).toISOString() : new Date().toISOString(),
-                    endDate: row.EndDate ? new Date(row.EndDate).toISOString() : new Date().toISOString(),
+                    startDate: row.StartDate ? localDateToISO(row.StartDate) : new Date().toISOString(),
+                    endDate: row.EndDate ? localDateToISO(row.EndDate) : new Date().toISOString(),
                     spType: "C"
                 };
                 const response = await offerService.manageOffer(offerPayload);
