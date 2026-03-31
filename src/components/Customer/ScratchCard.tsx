@@ -6,64 +6,75 @@ import CountdownTimer from './CountdownTimer';
 
 interface ScratchCardProps {
     onComplete: (offer: any) => void;
+    onNoOffer?: (message?: string) => void;
     customerId: number;
 }
 
-const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, customerId }) => {
+const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, onNoOffer, customerId }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isRevealed, setIsRevealed] = useState(false);
     const [isDrawing, setIsDrawing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [offerData, setOfferData] = useState<any>(null);
+    const [isNoOffer, setIsNoOffer] = useState(false);
+
 
     const [lastPos, setLastPos] = useState<{ x: number, y: number } | null>(null);
-    const hasInitialized = useRef(false);
+    const initializedCustomerId = useRef<number | null>(null);
 
     useEffect(() => {
-        let isMounted = true;
-
         const generateOffer = async () => {
-            if (hasInitialized.current) return;
-            hasInitialized.current = true;
+            if (initializedCustomerId.current === customerId) return;
+            initializedCustomerId.current = customerId;
 
             setIsLoading(true);
             setError(null);
 
             try {
                 const response = await customerService.generateScratchCard(customerId);
-                if (isMounted) {
-                    if (response.success && response.data) {
-                        const data = response.data;
-                        if (!data.expiryDate && data.generatedAt) {
-                            const genTime = new Date(data.generatedAt).getTime();
-                            data.expiryDate = new Date(genTime + (2 * 60 * 60 * 1000)).toISOString();
+                
+                if (response.success && response.data) {
+                    const data = response.data;
+                    if (!data.expiryDate && data.generatedAt) {
+                        const genTime = new Date(data.generatedAt).getTime();
+                        data.expiryDate = new Date(genTime + (2 * 60 * 60 * 1000)).toISOString();
+                    }
+                    setOfferData(data);
+                } else {
+                    const errorMsg = response.message || (response as any).error || 'Failed to generate offer';
+                    const isNoOfferMsg = errorMsg.toLowerCase().includes('no active offers available');
+                    if (isNoOfferMsg) {
+                        setIsNoOffer(true);
+                        if (onNoOffer) {
+                            onNoOffer(errorMsg);
+                            return; // Stop further processing as parent will close this
                         }
-                        setOfferData(data);
                     } else {
-                        setError(response.message || 'Failed to generate offer');
-                        hasInitialized.current = false;
+                        setError(errorMsg);
+                        initializedCustomerId.current = null;
+                        if (onNoOffer) {
+                            onNoOffer(errorMsg);
+                            return;
+                        }
                     }
                 }
             } catch (err) {
-                if (isMounted) {
-                    setError('An unexpected error occurred');
-                    hasInitialized.current = false;
+                setError('An unexpected error occurred');
+                initializedCustomerId.current = null;
+                if (onNoOffer) {
+                    onNoOffer('An unexpected error occurred');
                 }
             } finally {
-                if (isMounted) {
-                    setIsLoading(false);
-                }
+                setIsLoading(false);
             }
         };
 
         generateOffer();
-
-        return () => { isMounted = false; };
     }, [customerId]);
 
     useEffect(() => {
-        if (isLoading || error) return;
+        if (isLoading || error || isNoOffer) return;
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -200,6 +211,25 @@ const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, customerId }) => 
                         <Loader2 className="w-10 h-10 text-primary animate-spin" />
                         <p className="text-slate-500 font-black text-xs uppercase tracking-widest">Generating Your Luck...</p>
                     </div>
+                ) : isNoOffer ? (
+                    <div className="flex flex-col items-center justify-center space-y-4 px-6 text-center animate-in fade-in zoom-in duration-500">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-2">
+                            <AlertCircle className="w-8 h-8 text-slate-400" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-slate-900 font-black text-lg uppercase tracking-tight">No Offers Today</h3>
+                            <p className="text-slate-500 text-xs font-bold leading-relaxed">
+                                We don't have any active offers for you right now. 
+                                <br />Please check back again later!
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => onNoOffer?.()}
+                            className="mt-4 px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
+                        >
+                            Got it, Close
+                        </button>
+                    </div>
                 ) : error ? (
                     <div className="flex flex-col items-center justify-center space-y-3 text-red-500">
                         <AlertCircle className="w-10 h-10" />
@@ -237,7 +267,7 @@ const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, customerId }) => 
             </div>
 
             {/* Scratch Canvas Overlay */}
-            {!isRevealed && !isLoading && !error && (
+            {!isRevealed && !isLoading && !error && !isNoOffer && (
                 <canvas
                     ref={canvasRef}
                     width={320}

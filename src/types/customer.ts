@@ -4,8 +4,8 @@ export interface CustomerRegistration {
     email: string | null;
     dob: string | null;
     gender: 'male' | 'female' | 'other' | null;
-    foodPreference: string | null;
-    alcoholPreference: string | null;
+    foodPreference: string[];
+    alcoholPreference: string[];
     spType?: string;
 }
 

@@ -8,27 +8,36 @@ import {
     LogOut,
     Menu,
     X,
-    Shield
+    Shield,
+    History
 } from 'lucide-react';
 
 interface SidebarProps {
     isSidebarOpen: boolean;
     setIsSidebarOpen: (isOpen: boolean) => void;
     onLogout: () => void;
+    role?: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
     isSidebarOpen,
     setIsSidebarOpen,
-    onLogout
+    onLogout,
+    role
 }) => {
-    const menuItems = [
-        { path: '/admin/analytics', label: 'Dashboard', icon: BarChart3 },
-        { path: '/admin/customers', label: 'Customers', icon: Users },
-        { path: '/admin/offers', label: 'Offer Manager', icon: Gift },
-        { path: '/admin/redeem', label: 'Redemption', icon: TicketCheck },
-        { path: '/admin/users', label: 'Admin Users', icon: Shield },
+    const allMenuItems = [
+        { path: '/admin/analytics', label: 'Dashboard', icon: BarChart3, superAdminOnly: true },
+        { path: '/admin/customers', label: 'Customers', icon: Users, superAdminOnly: true },
+        { path: '/admin/offers', label: 'Offer Manager', icon: Gift, superAdminOnly: true },
+        { path: '/admin/redeem', label: 'Redemption', icon: TicketCheck, superAdminOnly: false },
+        { path: '/admin/history', label: 'History', icon: History, superAdminOnly: true },
+        { path: '/admin/users', label: 'Admin Users', icon: Shield, superAdminOnly: true },
     ];
+
+    const isSuperAdmin = role?.toLowerCase() === 'superadmin';
+    const menuItems = isSuperAdmin
+        ? allMenuItems
+        : allMenuItems.filter(item => !item.superAdminOnly);
 
     return (
         <aside className={`
@@ -39,7 +48,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {isSidebarOpen && (
                     <div className="flex items-center gap-3">
                         <img src="/asg.png" alt="ASG Logo" className="h-12 w-auto" />
-                        {/* <div className="w-8 h-8 bg-brand-orange rounded-lg flex items-center justify-center font-bold text-white">A</div> */}
                         <span className="font-bold text-xl tracking-tight">Admin</span>
                     </div>
                 )}

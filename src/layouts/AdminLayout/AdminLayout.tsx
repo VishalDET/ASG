@@ -15,6 +15,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [adminData, setAdminData] = useState<AdminProfile | null>(null);
 
+    // Read role directly from session (available immediately, no API wait)
+    const sessionRole = (() => {
+        try {
+            const s = sessionStorage.getItem('adminSession');
+            return s ? JSON.parse(s).role : undefined;
+        } catch { return undefined; }
+    })();
+
     useEffect(() => {
         const fetchAdminProfile = async () => {
             const session = sessionStorage.getItem('adminSession');
@@ -37,13 +45,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                 isSidebarOpen={isSidebarOpen}
                 setIsSidebarOpen={setIsSidebarOpen}
                 onLogout={onLogout}
+                role={adminData?.role || sessionRole}
             />
 
             <main className="flex-1 flex flex-col h-screen overflow-hidden w-full">
                 <Header
-                    userName={adminData?.name || "Vishal Admin"}
-                    userRole={adminData?.role || "Superadmin"}
-                    userInitial={(adminData?.name || "V").charAt(0).toUpperCase()}
+                    userName={adminData?.name || "Admin"}
+                    userRole={adminData?.role || sessionRole || "Admin"}
+                    userInitial={(adminData?.name || "A").charAt(0).toUpperCase()}
                 />
 
                 <div className="flex-1 overflow-y-auto bg-dark">

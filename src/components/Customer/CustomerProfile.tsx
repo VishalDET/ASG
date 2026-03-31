@@ -43,7 +43,6 @@ interface CustomerProfileProps {
 }
 
 const ALCOHOL_OPTIONS = [
-    'None',
     'Wine',
     'Beer',
     'Whiskey',
@@ -51,6 +50,13 @@ const ALCOHOL_OPTIONS = [
     'Vodka',
     'Gin',
     'Cocktails',
+];
+
+const FOOD_OPTIONS = [
+    'Veg',
+    'Non-Veg',
+    'Vegan',
+    'Eggetarian'
 ];
 
 
@@ -66,8 +72,12 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
     const [editedEmail, setEditedEmail] = useState(customer.email || '');
     const [editedDob, setEditedDob] = useState(formatDateForInput(customer.dob));
     const [editedGender, setEditedGender] = useState<Customer['gender']>(customer.gender?.toLowerCase() as Customer['gender'] || 'male');
-    const [editedFoodPref, setEditedFoodPref] = useState(customer.foodPreference?.toLowerCase() || 'veg');
-    const [editedAlcoholPref, setEditedAlcoholPref] = useState(customer.alcoholPreference?.toLowerCase() || 'none');
+    const [editedFoodPref, setEditedFoodPref] = useState<string[]>(
+        Array.isArray(customer.foodPreference) ? customer.foodPreference : (customer.foodPreference ? [customer.foodPreference] : [])
+    );
+    const [editedAlcoholPref, setEditedAlcoholPref] = useState<string[]>(
+        Array.isArray(customer.alcoholPreference) ? customer.alcoholPreference : (customer.alcoholPreference ? [customer.alcoholPreference] : [])
+    );
     const [selectedOfferDetail, setSelectedOfferDetail] = useState<OfferHistoryItem | null>(null);
     const [liveHistory, setLiveHistory] = useState<OfferHistoryItem[]>([]);
     const [liveStats, setLiveStats] = useState({ visitCount: customer.visitCount, offersCount: customer.offersCount });
@@ -112,8 +122,8 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
             setEditedEmail(customer.email || '');
             setEditedDob(formatDateForInput(customer.dob));
             setEditedGender(customer.gender?.toLowerCase() as Customer['gender'] || 'male');
-            setEditedFoodPref(customer.foodPreference?.toLowerCase() || 'veg');
-            setEditedAlcoholPref(customer.alcoholPreference?.toLowerCase() || 'none');
+            setEditedFoodPref(Array.isArray(customer.foodPreference) ? customer.foodPreference : (customer.foodPreference ? [customer.foodPreference] : []));
+            setEditedAlcoholPref(Array.isArray(customer.alcoholPreference) ? customer.alcoholPreference : (customer.alcoholPreference ? [customer.alcoholPreference] : []));
         }
     }, [customer, isEditing]);
 
@@ -128,7 +138,7 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
                 dob: editedDob,
                 gender: editedGender,
                 foodPreference: editedFoodPref,
-                alcoholPreference: currentAge >= 21 ? (editedAlcoholPref || 'none') : 'none'
+                alcoholPreference: currentAge >= 21 ? editedAlcoholPref : []
             });
         }
         setIsEditing(false);
@@ -139,8 +149,8 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
         setEditedEmail(customer.email || '');
         setEditedDob(customer.dob || '');
         setEditedGender(customer.gender?.toLowerCase() as Customer['gender'] || 'male');
-        setEditedFoodPref(customer.foodPreference?.toLowerCase() || 'veg');
-        setEditedAlcoholPref(customer.alcoholPreference?.toLowerCase() || 'none');
+        setEditedFoodPref(Array.isArray(customer.foodPreference) ? customer.foodPreference : (customer.foodPreference ? [customer.foodPreference] : []));
+        setEditedAlcoholPref(Array.isArray(customer.alcoholPreference) ? customer.alcoholPreference : (customer.alcoholPreference ? [customer.alcoholPreference] : []));
         setIsEditing(false);
     };
 
@@ -271,35 +281,41 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
                         </div>
                     </div>
                     <div className="space-y-4">
-                        <div className="flex items-center gap-3 text-slate-400">
-                            <Utensils size={18} className="text-slate-500" />
-                            <div className="flex flex-col gap-2 flex-1">
-                                <span className="text-sm">Preference: </span>
+                        <div className="flex items-start gap-3 text-slate-400">
+                            <Utensils size={18} className="text-slate-500 mt-0.5" />
+                            <div className="flex flex-col gap-1 flex-1">
+                                <span className="text-sm">Preferences: </span>
                                 {isEditing ? (
-                                    <div className="flex gap-2 mt-1">
-                                        <button
-                                            onClick={() => setEditedFoodPref('veg')}
-                                            className={`flex-1 py-1.5 rounded-lg font-semibold text-[10px] uppercase transition-all border ${editedFoodPref?.toLowerCase() === 'veg'
-                                                ? 'bg-success/20 border-success/40 text-success'
-                                                : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-600'
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                        {FOOD_OPTIONS.map(opt => (
+                                            <button
+                                                key={opt}
+                                                onClick={() => setEditedFoodPref(prev => 
+                                                    prev.includes(opt) ? prev.filter(p => p !== opt) : [...prev, opt]
+                                                )}
+                                                className={`px-3 py-1.5 rounded-lg font-bold text-[9px] uppercase transition-all border ${editedFoodPref.includes(opt)
+                                                    ? 'bg-success/20 border-success/40 text-success'
+                                                    : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-600'
                                                 }`}
-                                        >
-                                            🥬 Veg
-                                        </button>
-                                        <button
-                                            onClick={() => setEditedFoodPref('non-veg')}
-                                            className={`flex-1 py-1.5 rounded-lg font-semibold text-[10px] uppercase transition-all border ${editedFoodPref?.toLowerCase() === 'non-veg'
-                                                ? 'bg-primary/20 border-primary/40 text-primary'
-                                                : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-600'
-                                                }`}
-                                        >
-                                            🍖 Non-Veg
-                                        </button>
+                                            >
+                                                {opt}
+                                            </button>
+                                        ))}
                                     </div>
                                 ) : (
-                                    <span className={`text-sm font-bold uppercase ${customer.foodPreference === 'veg' ? 'text-success' : 'text-primary'}`}>
-                                        {customer.foodPreference === 'veg' ? '🥬 Veg' : '🍖 Non-Veg'}
-                                    </span>
+                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                        {Array.isArray(customer.foodPreference) && customer.foodPreference.length > 0 ? (
+                                            customer.foodPreference.map((pref: string) => (
+                                                <span key={pref} className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase border ${
+                                                    pref.toLowerCase().includes('veg') ? 'bg-success/10 text-success border-success/20' : 'bg-primary/10 text-primary border-primary/20'
+                                                }`}>
+                                                    {pref}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-slate-600 text-xs italic">Not specified</span>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -309,24 +325,39 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({
                                 <span className="text-sm">Alcohol: </span>
                                 {isEditing ? (
                                     currentAge >= 21 ? (
-                                        <select
-                                            value={editedAlcoholPref?.toLowerCase() || 'none'}
-                                            onChange={(e) => setEditedAlcoholPref(e.target.value.toLowerCase())}
-                                            className="bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-1 text-white text-xs focus:outline-none focus:ring-2 focus:ring-primary mt-1"
-                                        >
+                                        <div className="flex flex-wrap gap-2 mt-1">
                                             {ALCOHOL_OPTIONS.map(opt => (
-                                                <option key={opt} value={opt.toLowerCase()}>{opt}</option>
+                                                <button
+                                                    key={opt}
+                                                    onClick={() => setEditedAlcoholPref(prev => 
+                                                        prev.includes(opt) ? prev.filter(p => p !== opt) : [...prev, opt]
+                                                    )}
+                                                    className={`px-3 py-1.5 rounded-lg font-bold text-[9px] uppercase transition-all border ${editedAlcoholPref.includes(opt)
+                                                        ? 'bg-accent/20 border-accent/40 text-accent'
+                                                        : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-600'
+                                                    }`}
+                                                >
+                                                    {opt}
+                                                </button>
                                             ))}
-                                        </select>
+                                        </div>
                                     ) : (
                                         <div className="bg-slate-900/30 border border-slate-800/50 p-2 rounded-lg mt-1">
                                             <p className="text-[10px] text-slate-500 italic">Alcohol options are restricted for users under 21 (Age: {currentAge})</p>
                                         </div>
                                     )
                                 ) : (
-                                    <span className={`text-sm font-bold ${currentAge >= 21 ? 'text-accent' : 'text-slate-600'}`}>
-                                        {customer.alcoholPreference || 'None'}
-                                    </span>
+                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                        {Array.isArray(customer.alcoholPreference) && customer.alcoholPreference.length > 0 ? (
+                                            customer.alcoholPreference.map(pref => (
+                                                <span key={pref} className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase border bg-accent/10 text-accent border-accent/20">
+                                                    {pref}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-slate-600 text-xs italic">None</span>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>

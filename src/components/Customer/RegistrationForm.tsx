@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Phone, Mail, Calendar, ArrowRight, Wine, UtensilsCrossed } from 'lucide-react';
+import { User, Phone, Mail, Calendar, ArrowRight, Wine } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { CustomerRegistration } from '../../types/customer';
 import { calculateAge } from '../../utils/dateUtils';
@@ -10,7 +10,6 @@ interface RegistrationFormProps {
 }
 
 const ALCOHOL_OPTIONS = [
-    'None',
     'Wine',
     'Beer',
     'Whiskey',
@@ -20,14 +19,21 @@ const ALCOHOL_OPTIONS = [
     'Cocktails',
 ];
 
+const FOOD_OPTIONS = [
+    'Veg',
+    'Non-Veg',
+    'Vegan',
+    'Eggetarian'
+];
+
 export default function RegistrationForm({ onRegister, initialPhone = '' }: RegistrationFormProps) {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState(initialPhone);
     const [email, setEmail] = useState('');
     const [gender, setGender] = useState<'male' | 'female' | 'other'>('male');
     const [dob, setDob] = useState('');
-    const [foodPreference, setFoodPreference] = useState<'veg' | 'non-veg'>('veg');
-    const [alcoholPreference, setAlcoholPreference] = useState('none');
+    const [foodPreference, setFoodPreference] = useState<string[]>(['Veg']);
+    const [alcoholPreference, setAlcoholPreference] = useState<string[]>([]);
     const [error, setError] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -45,7 +51,6 @@ export default function RegistrationForm({ onRegister, initialPhone = '' }: Regi
             return;
         }
         setError('');
-        const finalAlcoholPref = calculateAge(dob) >= 21 ? alcoholPreference.toLowerCase() : 'none';
         onRegister({
             name,
             phone,
@@ -53,7 +58,7 @@ export default function RegistrationForm({ onRegister, initialPhone = '' }: Regi
             gender,
             dob,
             foodPreference,
-            alcoholPreference: finalAlcoholPref,
+            alcoholPreference: calculateAge(dob) >= 21 ? alcoholPreference : [],
             spType: 'C'
         });
     };
@@ -151,55 +156,68 @@ export default function RegistrationForm({ onRegister, initialPhone = '' }: Regi
                     </div>
                 </div>
 
-                {/* Food Preference */}
-                <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Food Preference</label>
-                    <div className="relative">
-                        <UtensilsCrossed className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                        <div className="flex gap-3 pl-11">
-                            <button
-                                type="button"
-                                onClick={() => setFoodPreference('veg')}
-                                className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all border ${foodPreference === 'veg'
-                                    ? 'bg-success/20 border-success/40 text-success'
-                                    : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:border-slate-600'
+                {/* Food Preference (Multi-Select) */}
+                <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Food Preferences (Multi-Select)</label>
+                    <div className="flex flex-wrap gap-2">
+                        {FOOD_OPTIONS.map((opt) => {
+                            const isSelected = foodPreference.includes(opt);
+                            return (
+                                <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={() => {
+                                        setFoodPreference(prev => 
+                                            prev.includes(opt) 
+                                                ? prev.filter(i => i !== opt) 
+                                                : [...prev, opt]
+                                        );
+                                    }}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                        isSelected 
+                                        ? 'bg-success/20 border-success/40 text-success shadow-lg shadow-success/10' 
+                                        : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-600'
                                     }`}
-                            >
-                                🥬 Veg
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setFoodPreference('non-veg')}
-                                className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all border ${foodPreference === 'non-veg'
-                                    ? 'bg-primary/20 border-primary/40 text-primary'
-                                    : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:border-slate-600'
-                                    }`}
-                            >
-                                🍖 Non-Veg
-                            </button>
-                        </div>
+                                >
+                                    {opt === 'Veg' ? '🥬 ' : opt === 'Non-Veg' ? '🍖 ' : opt === 'Vegan' ? '🥗 ' : '🥚 '}{opt}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
-                {/* Alcohol Preference - Only for Age >= 21 */}
+                {/* Alcohol Preference (Multi-Select) - Only for Age >= 21 */}
                 {calculateAge(dob) >= 21 ? (
                     <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
-                        className="space-y-1.5"
+                        className="space-y-2"
                     >
-                        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Alcohol Preference</label>
-                        <div className="relative">
-                            <Wine className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                            <select
-                                value={alcoholPreference.toLowerCase()}
-                                onChange={(e) => setAlcoholPreference(e.target.value.toLowerCase())}
-                                className={selectClass}
-                            >
-                                {ALCOHOL_OPTIONS.map((opt) => (
-                                    <option key={opt} value={opt.toLowerCase()}>{opt}</option>
-                                ))}
-                            </select>
+                        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Alcohol Preferences (Multi-Select)</label>
+                        <div className="flex flex-wrap gap-2">
+                            {ALCOHOL_OPTIONS.map((opt) => {
+                                const isSelected = alcoholPreference.includes(opt);
+                                return (
+                                    <button
+                                        key={opt}
+                                        type="button"
+                                        onClick={() => {
+                                            setAlcoholPreference(prev => 
+                                                prev.includes(opt) 
+                                                    ? prev.filter(i => i !== opt) 
+                                                    : [...prev, opt]
+                                            );
+                                        }}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                            isSelected 
+                                            ? 'bg-accent/20 border-accent/40 text-accent shadow-lg shadow-accent/10' 
+                                            : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-600'
+                                        }`}
+                                    >
+                                        {opt}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </motion.div>
                 ) : dob && (

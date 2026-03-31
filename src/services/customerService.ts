@@ -30,8 +30,8 @@ export const customerService = {
                 email: data.email,
                 dob: data.dob ? localDateToISO(data.dob) : null,
                 gender: data.gender ? data.gender.toLowerCase() : null,
-                foodPreference: data.foodPreference ? data.foodPreference.toLowerCase() : null,
-                alcoholPreference: data.alcoholPreference ? data.alcoholPreference.toLowerCase() : null,
+                foodPreference: data.foodPreference || [],
+                alcoholPreference: data.alcoholPreference || [],
                 spType: (data as any).spType || 'C'
             };
 
@@ -87,7 +87,7 @@ export const customerService = {
         }
     },
 
-    async generateScratchCard(customerId: number): Promise<{ success: boolean; data?: any; message?: string }> {
+    async generateScratchCard(customerId: number): Promise<{ success: boolean; data?: any; message?: string; error?: string }> {
         try {
             const body = { customerId };
             const response = await fetch(`${API_URL}/Offer/GenerateScratchCard`, {
@@ -98,12 +98,20 @@ export const customerService = {
                 body: JSON.stringify(body),
             });
 
-            const result = await response.json();
+            let result: any;
+            try {
+                result = await response.json();
+            } catch (e) {
+                return { success: false, message: 'Server returned an invalid response' };
+            }
+
             return {
                 success: result.success,
                 data: result.data,
-                message: result.message
+                message: result.message,
+                error: result.error
             };
+
         } catch (error) {
             console.error('Error generating scratch card:', error);
             return { success: false, message: 'Connection error' };

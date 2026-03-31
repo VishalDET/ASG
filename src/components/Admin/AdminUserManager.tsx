@@ -307,8 +307,8 @@ const AdminUserManager: React.FC = () => {
                                             >
                                                 <option value="SuperAdmin">SuperAdmin</option>
                                                 <option value="Admin">Admin</option>
-                                                <option value="Manager">Manager</option>
                                             </select>
+                                            
                                         </div>
 
                                         <div className="space-y-1">

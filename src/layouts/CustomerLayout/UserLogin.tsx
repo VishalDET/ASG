@@ -6,6 +6,8 @@ interface UserLoginProps {
     onVerify: (phone: string) => Promise<void>;
 }
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function UserLogin({ onVerify }: UserLoginProps) {
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [phone, setPhone] = useState('');
@@ -13,7 +15,21 @@ export default function UserLogin({ onVerify }: UserLoginProps) {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSendOTP = (e: React.FormEvent) => {
+    const sendOtp = async (phoneNumber: string): Promise<boolean> => {
+        try {
+            const response = await fetch(`${API_URL}/SMS/auth-login-otp?phoneNumber=${phoneNumber}`, {
+                method: 'POST',
+                headers: { 'accept': '*/*' },
+                body: '',
+            });
+            const result = await response.json();
+            return result.success === true;
+        } catch {
+            return false;
+        }
+    };
+
+    const handleSendOTP = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         if (!phone) {
@@ -26,11 +42,13 @@ export default function UserLogin({ onVerify }: UserLoginProps) {
         }
 
         setIsLoading(true);
-        // Simulate sending OTP
-        setTimeout(() => {
-            setIsLoading(false);
+        const sent = await sendOtp(phone);
+        setIsLoading(false);
+        if (sent) {
             setStep('otp');
-        }, 1500);
+        } else {
+            setError('Failed to send OTP. Please try again.');
+        }
     };
 
     const handleVerifyOTP = async (e: React.FormEvent) => {
@@ -40,16 +58,23 @@ export default function UserLogin({ onVerify }: UserLoginProps) {
             setError('Please enter the OTP');
             return;
         }
-        if (otp !== '123456') {
-            setError('Invalid OTP. Use 123456 for testing.');
-            setOtp('');
-            return;
-        }
 
         setIsLoading(true);
         try {
-            // Wait for parent to handle session, visit tracking, and navigation
-            await onVerify(phone);
+            const response = await fetch(`${API_URL}/SMS/verify-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, otp }),
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                // OTP verified — delegate session/navigation to parent
+                await onVerify(phone);
+            } else {
+                setError(result.message || 'Invalid OTP. Please try again.');
+                setOtp('');
+            }
         } catch (err) {
             setError('Verification failed. Please try again.');
         } finally {
@@ -172,7 +197,7 @@ export default function UserLogin({ onVerify }: UserLoginProps) {
                         </button>
 
                         <p className="text-center text-xs text-slate-400">
-                            Didn't receive code? <button type="button" className="text-accent hover:underline">Resend</button>
+                            Didn't receive code? <button type="button" onClick={() => sendOtp(phone)} className="text-accent hover:underline">Resend</button>
                         </p>
                     </motion.form>
                 )}

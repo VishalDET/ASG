@@ -11,12 +11,16 @@ import {
     Area
 } from 'recharts';
 import { Users, Ticket, CheckCircle, TrendingUp, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { dashboardService, DashboardMetrics } from '../../services/dashboardService';
 
-const StatCard = ({ title, value, icon: Icon, color, trend }: any) => (
-    <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl">
+const StatCard = ({ title, value, icon: Icon, color, trend, onClick }: any) => (
+    <div 
+        onClick={onClick}
+        className={`bg-slate-900/40 border border-slate-800 p-6 rounded-2xl ${onClick ? 'cursor-pointer hover:bg-slate-800/80 hover:border-slate-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg hover:shadow-xl group' : ''}`}
+    >
         <div className="flex justify-between items-start mb-4">
-            <div className={`p-3 rounded-xl bg-${color}/10 text-${color}`}>
+            <div className={`p-3 rounded-xl bg-${color}/10 text-${color} ${onClick ? 'group-hover:scale-110 transition-transform' : ''}`}>
                 <Icon size={24} />
             </div>
             {trend && (
@@ -31,6 +35,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: any) => (
 );
 
 const Analytics: React.FC = () => {
+    const navigate = useNavigate();
     const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
     const [loading, setLoading] = useState(true);
     const [days, setDays] = useState(7);
@@ -84,10 +89,34 @@ const Analytics: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total Customers" value={metrics.totalCustomers.toLocaleString()} icon={Users} color="primary" />
-                <StatCard title="Active Offers" value={metrics.activeOffers.toLocaleString()} icon={Ticket} color="accent" />
-                <StatCard title="Total Redemptions" value={metrics.totalRedemptions.toLocaleString()} icon={CheckCircle} color="success" />
-                <StatCard title="Pending Redemptions" value={metrics.pendingRedemptions.toLocaleString()} icon={TrendingUp} color="info" />
+                <StatCard 
+                    title="Total Customers" 
+                    value={metrics.totalCustomers.toLocaleString()} 
+                    icon={Users} 
+                    color="primary" 
+                    onClick={() => navigate('/admin/customers')}
+                />
+                <StatCard 
+                    title="Active Offers" 
+                    value={metrics.activeOffers.toLocaleString()} 
+                    icon={Ticket} 
+                    color="accent" 
+                    onClick={() => navigate('/admin/offers')}
+                />
+                <StatCard 
+                    title="Total Redemptions" 
+                    value={metrics.totalRedemptions.toLocaleString()} 
+                    icon={CheckCircle} 
+                    color="success" 
+                    onClick={() => navigate('/admin/history')}
+                />
+                <StatCard 
+                    title="Pending Redemptions" 
+                    value={metrics.pendingRedemptions.toLocaleString()} 
+                    icon={TrendingUp} 
+                    color="info" 
+                    onClick={() => navigate('/admin/history')} // Pending redemptions can be viewed in history
+                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -15,6 +15,24 @@ export interface ValidationData {
     offerId?: string | number;
 }
 
+export interface RedemptionRecord {
+    customerName: string;
+    offerTitle: string;
+    code: string;
+    redeemedDatetime: string | null;
+    revealedDatetime: string | null;
+    status: string;
+}
+
+export interface RedemptionHistoryRequest {
+    pageNumber: number;
+    pageSize: number;
+    searchQuery: string;
+    offerTitle: string;
+    startDate: string;
+    endDate: string;
+}
+
 export interface RedeemRequest {
     code: string;
     customerId: number;
@@ -73,6 +91,28 @@ export const redemptionService = {
         } catch (error) {
             console.error('Error redeeming coupon:', error);
             return { success: false, message: 'Network error during redemption' };
+        }
+    },
+    
+    async getRedemptionHistory(payload: RedemptionHistoryRequest): Promise<{ data: RedemptionRecord[], totalCount: number }> {
+        try {
+            const response = await fetch(`${API_URL}/Admin/RedemptionHistory`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) return { data: [], totalCount: 0 };
+
+            const result = await response.json();
+            return {
+                data: result.success && result.data ? result.data : [],
+                totalCount: result.totalCount || 0
+            };
+        } catch (error) {
+            console.error('Error fetching redemption history:', error);
+            return { data: [], totalCount: 0 };
         }
     }
 };

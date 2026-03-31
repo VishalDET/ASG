@@ -9,6 +9,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import CustomerLayout from '../layouts/CustomerLayout/CustomerLayout';
 import { Customer, CustomerRegistration } from '../types/customer';
 import { customerService } from '../services/customerService';
+import toast from 'react-hot-toast';
 
 const SESSION_DURATION = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 
@@ -24,7 +25,6 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
     const [selectedOffer, setSelectedOffer] = useState<any>(null);
     const [history, setHistory] = useState<any[]>([]);
     const [prefilledPhone, setPrefilledPhone] = useState('');
-    const [updateMessage, setUpdateMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     // Sync state with prop if prop changes
     useEffect(() => {
@@ -142,12 +142,10 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
             }
 
             setStep('profile'); // Force stay on profile
-            setUpdateMessage({ type: 'success', text: 'Profile updated successfully!' });
-            setTimeout(() => setUpdateMessage(null), 3000);
+            toast.success('Profile updated successfully!');
         } else {
             console.error('Profile update failed:', result.message);
-            setUpdateMessage({ type: 'error', text: result.message || 'Update failed' });
-            setTimeout(() => setUpdateMessage(null), 3000);
+            toast.error(result.message || 'Update failed');
         }
     };
 
@@ -199,15 +197,6 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
             showProfileButton={step !== 'profile'}
             onProfileClick={() => setStep('profile')}
         >
-            {updateMessage && (
-                <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl border flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${updateMessage.type === 'success' ? 'bg-success/20 border-success/40 text-success' : 'bg-amber-500/20 border-amber-500/40 text-amber-200'
-                    }`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${updateMessage.type === 'success' ? 'bg-success/20' : 'bg-amber-500/20'}`}>
-                        {updateMessage.type === 'success' ? '✓' : '✕'}
-                    </div>
-                    <p className="font-bold">{updateMessage.text}</p>
-                </div>
-            )}
             <AnimatePresence mode="wait">
                 {step === 'register' && (
                     <motion.div
@@ -252,6 +241,11 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialStep = 'login' }
                         </div>
                         <ScratchCard
                             onComplete={handleScratchComplete}
+                            onNoOffer={(msg) => {
+                                if (msg) toast.error(msg, { id: 'no-offer' });
+                                setStep('profile'); // Force instant unmount
+                                navigate('/portal');
+                            }}
                             customerId={customer?.id || 0}
                         />
                     </motion.div>
