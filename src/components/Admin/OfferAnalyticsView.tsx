@@ -10,7 +10,8 @@ import {
     Target,
     Info,
     Calendar,
-    Loader2
+    Loader2,
+    Percent
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -27,6 +28,13 @@ const TARGET_ICONS: Record<string, any> = {
     new: Target,
     frequent: Info,
     inactive: Calendar,
+    premium: Percent
+};
+
+const getTargetingKey = (targeting: string | undefined): string => {
+    if (!targeting) return 'all';
+    if (targeting === 'Premium Users') return 'premium';
+    return targeting.toLowerCase();
 };
 
 const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialOffer, onBack }) => {
@@ -81,7 +89,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
             };
         });
 
-        utilizations.forEach(u => {
+        utilizations.forEach((u: any) => {
             const dateStr = u.redeemedAt.split(' (')[0]; // Extract "Feb 24, 2026"
             try {
                 const uDate = new Date(dateStr);
@@ -99,7 +107,7 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
     };
 
     const chartData = generateHistory();
-    const TargetIcon = TARGET_ICONS[activeOffer.targeting || 'all'] || Info;
+    const TargetIcon = TARGET_ICONS[getTargetingKey(activeOffer.targeting)] || Info;
 
     if (isLoading) {
         return (
@@ -161,12 +169,11 @@ const OfferAnalyticsView: React.FC<OfferAnalyticsViewProps> = ({ offer: initialO
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
                     { label: 'Allotted', value: liveAllotted, sub: 'cards', color: 'text-white', bg: 'bg-slate-950/40' },
                     { label: 'Revealed', value: liveRevealed, sub: `(${Math.round((liveRevealed / (liveAllotted || 1)) * 100) || 0}%)`, color: 'text-info', bg: 'bg-info/5 border-info/10' },
                     { label: 'Redeemed', value: liveRedeemed, sub: `(${Math.round((liveRedeemed / (liveRevealed || 1)) * 100) || 0}%)`, color: 'text-success', bg: 'bg-success/5 border-success/10' },
-                    { label: 'Win Chance', value: `${activeOffer.weight}%`, sub: 'probability', color: 'text-accent', bg: 'bg-accent/5 border-accent/10' },
                 ].map((stat, i) => (
                     <motion.div
                         key={i}

@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { dashboardService, DashboardMetrics } from '../../services/dashboardService';
 
 const StatCard = ({ title, value, icon: Icon, color, trend, onClick }: any) => (
-    <div 
+    <div
         onClick={onClick}
         className={`bg-slate-900/40 border border-slate-800 p-6 rounded-2xl ${onClick ? 'cursor-pointer hover:bg-slate-800/80 hover:border-slate-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg hover:shadow-xl group' : ''}`}
     >
@@ -73,7 +73,7 @@ const Analytics: React.FC = () => {
         <div className="p-8 space-y-8 max-w-7xl mx-auto">
             <div className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-2xl font-bold text-white">System Analytics</h1>
+                    <h1 className="text-2xl font-normal text-white">System Analytics</h1>
                     <p className="text-slate-400 text-sm">Performance overview of your loyalty program</p>
                 </div>
                 <div className="flex gap-3">
@@ -89,32 +89,32 @@ const Analytics: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard 
-                    title="Total Customers" 
-                    value={metrics.totalCustomers.toLocaleString()} 
-                    icon={Users} 
-                    color="primary" 
+                <StatCard
+                    title="Total Customers"
+                    value={metrics.totalCustomers.toLocaleString()}
+                    icon={Users}
+                    color="primary"
                     onClick={() => navigate('/admin/customers')}
                 />
-                <StatCard 
-                    title="Active Offers" 
-                    value={metrics.activeOffers.toLocaleString()} 
-                    icon={Ticket} 
-                    color="accent" 
+                <StatCard
+                    title="Active Offers"
+                    value={metrics.activeOffers.toLocaleString()}
+                    icon={Ticket}
+                    color="accent"
                     onClick={() => navigate('/admin/offers')}
                 />
-                <StatCard 
-                    title="Total Redemptions" 
-                    value={metrics.totalRedemptions.toLocaleString()} 
-                    icon={CheckCircle} 
-                    color="success" 
+                <StatCard
+                    title="Total Redemptions"
+                    value={metrics.totalRedemptions.toLocaleString()}
+                    icon={CheckCircle}
+                    color="success"
                     onClick={() => navigate('/admin/history')}
                 />
-                <StatCard 
-                    title="Pending Redemptions" 
-                    value={metrics.pendingRedemptions.toLocaleString()} 
-                    icon={TrendingUp} 
-                    color="info" 
+                <StatCard
+                    title="Pending Redemptions"
+                    value={metrics.pendingRedemptions.toLocaleString()}
+                    icon={TrendingUp}
+                    color="info"
                     onClick={() => navigate('/admin/history')} // Pending redemptions can be viewed in history
                 />
             </div>

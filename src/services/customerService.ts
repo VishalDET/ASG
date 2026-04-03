@@ -55,21 +55,31 @@ export const customerService = {
         }
     },
 
-    async getAllCustomers(): Promise<Customer[]> {
+    async getAllCustomers(pageNumber: number = 1, pageSize: number = 10, gender?: string): Promise<{ data: Customer[]; totalCount: number }> {
         try {
-            const response = await fetch(`${API_URL}/Customer/GetCustomers`);
-            if (!response.ok) return [];
+            const params = new URLSearchParams({
+                pageNumber: pageNumber.toString(),
+                pageSize: pageSize.toString()
+            });
+            if (gender && gender !== 'all') params.append('gender', gender.toLowerCase());
+
+            const response = await fetch(`${API_URL}/Customer/GetCustomers?${params.toString()}`);
+            if (!response.ok) return { data: [], totalCount: 0 };
 
             const result = await response.json();
             if (result.success && result.data) {
-                return result.data;
+                return {
+                    data: result.data,
+                    totalCount: result.totalCount || result.totalRecords || result.data.length
+                };
             }
-            return [];
+            return { data: [], totalCount: 0 };
         } catch (error) {
             console.error('Error fetching all customers:', error);
-            return [];
+            return { data: [], totalCount: 0 };
         }
     },
+
 
     async getCustomerProfile(id: number): Promise<Customer | null> {
         try {

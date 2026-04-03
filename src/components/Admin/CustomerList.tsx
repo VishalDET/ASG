@@ -12,21 +12,33 @@ const CustomerList: React.FC = () => {
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [gender, setGender] = useState('all');
+    const [totalCount, setTotalCount] = useState(0);
+
+    const fetchCustomers = async () => {
+        try {
+            setLoading(true);
+            const response = await customerService.getAllCustomers(currentPage, pageSize, gender);
+            setCustomers(response.data);
+            setTotalCount(response.totalCount);
+            setError(null);
+        } catch (err) {
+            setError('Failed to load customers. Please try again later.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchCustomers = async () => {
-            try {
-                setLoading(true);
-                const data = await customerService.getAllCustomers();
-                setCustomers(data);
-                setError(null);
-            } catch (err) {
-                setError('Failed to load customers. Please try again later.');
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchCustomers();
-    }, []);
+    }, [currentPage, gender, pageSize]);
+
+    // Reset to page 1 when filter or page size changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [gender, pageSize]);
 
     const handleViewCustomer = (customer: Customer) => {
         setSelectedCustomer(customer);
@@ -46,7 +58,7 @@ const CustomerList: React.FC = () => {
         <div className="p-8 space-y-6 max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Customer Database</h1>
+                    <h1 className="text-2xl font-normal text-white">Customer Database</h1>
                     <p className="text-slate-400 text-sm">Manage and track your customer engagement</p>
                 </div>
                 <div className="flex gap-4 w-full sm:w-auto">
@@ -60,9 +72,33 @@ const CustomerList: React.FC = () => {
                             className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:border-primary text-sm"
                         />
                     </div>
-                    <button className="bg-slate-900 border border-slate-800 p-2 rounded-lg text-slate-400 hover:text-white transition-all">
-                        <Filter size={20} />
-                    </button>
+                    <div className="relative flex items-center">
+                        <select
+                            value={pageSize}
+                            onChange={(e) => setPageSize(Number(e.target.value))}
+                            className="bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 focus:outline-none focus:border-primary text-sm text-white appearance-none pr-8 cursor-pointer"
+                            title="Records per page"
+                        >
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                        </select>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] pointer-events-none">Pg</span>
+                    </div>
+                    <div className="relative flex items-center">
+                        <select
+                            value={gender}
+                            onChange={(e) => setGender(e.target.value)}
+                            className="bg-slate-900 border border-slate-800 rounded-lg py-2 px-4 focus:outline-none focus:border-primary text-sm text-white appearance-none pr-8 cursor-pointer"
+                        >
+                            <option value="all">All Genders</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <Filter className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 pointer-events-none" />
+                    </div>
                 </div>
             </div>
 
@@ -135,10 +171,10 @@ const CustomerList: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col gap-1">
-                                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md w-fit ${customer.foodPreference === 'veg' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>
-                                                    {customer.foodPreference || 'N/A'}
+                                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md w-fit ${customer.foodPreference?.some(p => p.toLowerCase().includes('veg')) ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>
+                                                    {customer.foodPreference?.join(', ') || 'N/A'}
                                                 </span>
-                                                <span className="text-slate-400 text-[10px] font-medium capitalize">{customer.alcoholPreference || 'N/A'}</span>
+                                                <span className="text-slate-400 text-[10px] font-medium capitalize">{customer.alcoholPreference?.join(', ') || 'N/A'}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -160,11 +196,25 @@ const CustomerList: React.FC = () => {
                 </div>
                 <div className="p-4 border-t border-slate-800 bg-slate-800/20 flex justify-between items-center">
                     <span className="text-sm text-slate-500">
-                        {customers.length > 0 ? `Total ${customers.length} customers recorded` : 'No customers recorded'}
+                        {totalCount > 0 
+                            ? `Showing ${(currentPage - 1) * pageSize + 1} to ${Math.min(currentPage * pageSize, totalCount)} of ${totalCount} customers` 
+                            : 'No customers recorded'}
                     </span>
                     <div className="flex gap-2">
-                        <button className="px-4 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs font-medium hover:bg-slate-700 disabled:opacity-50" disabled>Previous</button>
-                        <button className="px-4 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs font-medium hover:bg-slate-700">Next</button>
+                        <button 
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1 || loading}
+                            className="px-4 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs font-medium hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Previous
+                        </button>
+                        <button 
+                            onClick={() => setCurrentPage(prev => prev + 1)}
+                            disabled={currentPage * pageSize >= totalCount || loading}
+                            className="px-4 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs font-medium hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Next
+                        </button>
                     </div>
                 </div>
             </div>

@@ -13,14 +13,15 @@ interface ScratchCardProps {
 const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, onNoOffer, customerId }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isRevealed, setIsRevealed] = useState(false);
-    const [isDrawing, setIsDrawing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [offerData, setOfferData] = useState<any>(null);
     const [isNoOffer, setIsNoOffer] = useState(false);
 
-
-    const [lastPos, setLastPos] = useState<{ x: number, y: number } | null>(null);
+    // Use refs instead of state for high-frequency drawing events to completely eliminate lag/glitching
+    const isDrawingRef = useRef(false);
+    const lastPosRef = useRef<{ x: number, y: number } | null>(null);
+    const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const initializedCustomerId = useRef<number | null>(null);
 
     useEffect(() => {
@@ -78,32 +79,46 @@ const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, onNoOffer, custom
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (!ctx) return;
 
-        // Fill with overlay color - using a more premium gradient or solid gray
-        ctx.fillStyle = '#cbd5e1';
+        // Premium Gold/Silver Gradient overlay
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, '#fde047'); // yellow-300
+        gradient.addColorStop(0.5, '#eab308'); // yellow-500
+        gradient.addColorStop(1, '#a16207'); // yellow-800
+
+        ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Add pattern/texture
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 1;
-        for (let i = 0; i < canvas.width; i += 10) {
+        // Add subtle shiny metallic lines
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 2;
+        for (let i = -canvas.width; i < canvas.width * 2; i += 20) {
             ctx.beginPath();
             ctx.moveTo(i, 0);
-            ctx.lineTo(i, canvas.height);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(canvas.width, i);
+            ctx.lineTo(i + canvas.height, canvas.height);
             ctx.stroke();
         }
 
-        ctx.font = 'bold 24px Arial';
-        ctx.fillStyle = '#475569';
+        // Add dropshadow to text for premium feel
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 4;
+        
+        ctx.font = '900 32px sans-serif'; // Bolder, larger font
+        ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
-        ctx.fillText('SCRATCH HERE!', canvas.width / 2, canvas.height / 2);
-    }, [isLoading, error]);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('SCRATCH', canvas.width / 2, canvas.height / 2 - 20);
+        ctx.font = '900 24px sans-serif';
+        ctx.fillText('TO REVEAL', canvas.width / 2, canvas.height / 2 + 20);
+
+        // Reset shadow for scratching
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+    }, [isLoading, error, isNoOffer]);
 
     const getPos = (e: React.MouseEvent | React.TouchEvent) => {
         const canvas = canvasRef.current;
@@ -124,17 +139,21 @@ const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, onNoOffer, custom
     };
 
     const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
-        setIsDrawing(true);
-        setLastPos(getPos(e));
+        isDrawingRef.current = true;
+        lastPosRef.current = getPos(e);
     };
 
     const handleEnd = () => {
-        setIsDrawing(false);
-        setLastPos(null);
+        isDrawingRef.current = false;
+        lastPosRef.current = null;
     };
 
     const scratch = (e: React.MouseEvent | React.TouchEvent) => {
-        if (!isDrawing || isRevealed) return;
+        if (!isDrawingRef.current || isRevealed) return;
+
+        // Prevent accidental scrolling on mobile while scratching
+        if ('cancelable' in e && e.cancelable) e.preventDefault();
+
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -143,21 +162,28 @@ const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, onNoOffer, custom
         const pos = getPos(e);
 
         ctx.globalCompositeOperation = 'destination-out';
-        ctx.lineWidth = 40;
+        ctx.lineWidth = 55; // Much wider brush for smoother UX
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
         ctx.beginPath();
-        if (lastPos) {
-            ctx.moveTo(lastPos.x, lastPos.y);
+        if (lastPosRef.current) {
+            ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
         } else {
             ctx.moveTo(pos.x, pos.y);
         }
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
 
-        setLastPos(pos);
-        checkReveal();
+        lastPosRef.current = pos;
+
+        // Throttle checkReveal to prevent performance lag (glitching)
+        if (!checkTimeoutRef.current && !isRevealed) {
+            checkTimeoutRef.current = setTimeout(() => {
+                checkReveal();
+                checkTimeoutRef.current = null;
+            }, 100);
+        }
     };
 
     const checkReveal = () => {
@@ -166,18 +192,27 @@ const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, onNoOffer, custom
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        if (isRevealed) return;
+
+        // Skip pixels to drastically improve performance (16x faster)
+        const stride = 4;
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const pixels = imageData.data;
         let transparentPixels = 0;
+        let totalCheckedPixels = 0;
 
-        for (let i = 0; i < pixels.length; i += 4) {
-            if (pixels[i + 3] === 0) {
-                transparentPixels++;
+        for (let y = 0; y < canvas.height; y += stride) {
+            for (let x = 0; x < canvas.width; x += stride) {
+                const i = (y * canvas.width + x) * 4;
+                if (pixels[i + 3] < 128) {
+                    transparentPixels++;
+                }
+                totalCheckedPixels++;
             }
         }
 
-        const percentage = (transparentPixels / (pixels.length / 4)) * 100;
-        if (percentage > 50 && !isRevealed) {
+        const percentage = (transparentPixels / totalCheckedPixels) * 100;
+        if (percentage > 35 && !isRevealed) { // Lowered reveal threshold to 35%
             revealAll();
         }
     };
@@ -185,21 +220,27 @@ const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, onNoOffer, custom
     const revealAll = () => {
         setIsRevealed(true);
         const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (canvas) {
+            // Smooth fade out rather than instant clear
+            canvas.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            canvas.style.opacity = '0';
+            canvas.style.transform = 'scale(1.05)';
+        }
 
         confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 }
+            particleCount: 200,
+            spread: 90,
+            origin: { y: 0.6 },
+            colors: ['#fde047', '#eab308', '#a16207', '#ffffff'] // Golden confetti
         });
 
         if (offerData) {
-            onComplete(offerData);
+            setTimeout(() => {
+                onComplete(offerData);
+            }, 600); // Wait for fade out to complete before parent logic if needed
         }
     };
+
 
     return (
         <div className="scratch-container w-[320px] h-[320px] rounded-[2rem] overflow-hidden shadow-2xl transition-all hover:scale-[1.02] relative bg-white border-8 border-white/50 backdrop-blur-sm">

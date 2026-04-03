@@ -150,12 +150,12 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ customer, isO
                                             <div className="p-4 rounded-2xl bg-brand-green/5 border border-brand-green/10">
                                                 <Utensils size={16} className="text-brand-green mb-2" />
                                                 <p className="text-[10px] text-slate-500 uppercase mb-0.5">Dietary</p>
-                                                <p className="text-sm font-bold text-brand-green capitalize">{displayData.foodPreference || 'No preference'}</p>
+                                                <p className="text-sm font-bold text-brand-green capitalize">{displayData.foodPreference?.join(', ') || 'No preference'}</p>
                                             </div>
                                             <div className="p-4 rounded-2xl bg-brand-orange/5 border border-brand-orange/10">
                                                 <Beer size={16} className="text-brand-orange mb-2" />
                                                 <p className="text-[10px] text-slate-500 uppercase mb-0.5">Beverage</p>
-                                                <p className="text-sm font-bold text-brand-orange capitalize">{displayData.alcoholPreference || 'None'}</p>
+                                                <p className="text-sm font-bold text-brand-orange capitalize">{displayData.alcoholPreference?.join(', ') || 'None'}</p>
                                             </div>
                                         </div>
                                     </section>

@@ -69,7 +69,7 @@ const RedemptionTerminal: React.FC = () => {
         <div className="p-8 h-full flex items-center justify-center">
             <div className="max-w-xl w-full">
                 <div className="text-center mb-10">
-                    <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Redemption Terminal</h1>
+                    <h1 className="text-3xl font-normal text-white mb-2 tracking-tight">Redemption Terminal</h1>
                     <p className="text-slate-400">Scan or enter the unique customer offer code to verify and redeem</p>
                 </div>
 

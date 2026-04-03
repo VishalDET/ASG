@@ -26,8 +26,10 @@ export const calculateAge = (dob: string): number => {
  */
 export const localDateToISO = (dateStr: string): string => {
     if (!dateStr) return '';
+    // If it's already an ISO string or contains a timestamp, extract just the date part
+    const dateOnly = dateStr.split('T')[0];
     // Parse the date parts to avoid timezone conversion
-    const [year, month, day] = dateStr.split('-').map(Number);
+    const [year, month, day] = dateOnly.split('-').map(Number);
     const d = new Date(year, month - 1, day, 12, 0, 0); // noon to safely avoid DST/UTC shifts
     return d.toISOString();
 };

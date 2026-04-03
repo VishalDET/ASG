@@ -104,6 +104,7 @@ export default function RegistrationForm({ onRegister, initialPhone = '' }: Regi
                                 onChange={(e) => setGender(e.target.value as 'male' | 'female' | 'other')}
                                 className={selectClass}
                             >
+                                <option value="">Select Gender</option>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
                                 <option value="other">Other</option>
@@ -167,17 +168,16 @@ export default function RegistrationForm({ onRegister, initialPhone = '' }: Regi
                                     key={opt}
                                     type="button"
                                     onClick={() => {
-                                        setFoodPreference(prev => 
-                                            prev.includes(opt) 
-                                                ? prev.filter(i => i !== opt) 
+                                        setFoodPreference(prev =>
+                                            prev.includes(opt)
+                                                ? prev.filter(i => i !== opt)
                                                 : [...prev, opt]
                                         );
                                     }}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                                        isSelected 
-                                        ? 'bg-success/20 border-success/40 text-success shadow-lg shadow-success/10' 
-                                        : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-600'
-                                    }`}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected
+                                            ? 'bg-success/20 border-success/40 text-success shadow-lg shadow-success/10'
+                                            : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-600'
+                                        }`}
                                 >
                                     {opt === 'Veg' ? '🥬 ' : opt === 'Non-Veg' ? '🍖 ' : opt === 'Vegan' ? '🥗 ' : '🥚 '}{opt}
                                 </button>
@@ -202,17 +202,16 @@ export default function RegistrationForm({ onRegister, initialPhone = '' }: Regi
                                         key={opt}
                                         type="button"
                                         onClick={() => {
-                                            setAlcoholPreference(prev => 
-                                                prev.includes(opt) 
-                                                    ? prev.filter(i => i !== opt) 
+                                            setAlcoholPreference(prev =>
+                                                prev.includes(opt)
+                                                    ? prev.filter(i => i !== opt)
                                                     : [...prev, opt]
                                             );
                                         }}
-                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                                            isSelected 
-                                            ? 'bg-accent/20 border-accent/40 text-accent shadow-lg shadow-accent/10' 
-                                            : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-600'
-                                        }`}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected
+                                                ? 'bg-accent/20 border-accent/40 text-accent shadow-lg shadow-accent/10'
+                                                : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:border-slate-600'
+                                            }`}
                                     >
                                         {opt}
                                     </button>

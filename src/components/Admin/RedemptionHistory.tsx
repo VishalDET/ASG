@@ -121,7 +121,7 @@ const RedemptionHistory: React.FC = () => {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mt-2 gap-6 bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800/50 backdrop-blur-xl relative overflow-hidden">
                 <div className="flex items-center gap-6 z-10">
-                    <div className="bg-primary/20 p-4 rounded-2xl text-primary shadow-lg shadow-primary/10 border border-primary/20">
+                    <div className="bg-primary/20 p-4 py-1 rounded-2xl text-primary shadow-lg shadow-primary/10 border border-primary/20">
                         <History size={32} />
                     </div>
                     <div>
@@ -154,7 +154,7 @@ const RedemptionHistory: React.FC = () => {
             {/* Filters Bar - Modern Premium Styling */}
             <div className="bg-slate-900/40 p-5 rounded-[2rem] border border-slate-800/50 backdrop-blur-md shadow-inner relative group/bar">
                 <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
-                    
+
                     {/* Search Field - Main Focus */}
                     <div className="flex-1 min-w-[200px] relative group/search">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 group-focus-within/search:text-primary transition-colors" />
@@ -256,10 +256,10 @@ const RedemptionHistory: React.FC = () => {
 
             {/* Table Section */}
             <div className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800/50 overflow-hidden backdrop-blur-md shadow-2xl relative">
-                <div className="overflow-x-auto">
+                <div className="overflow-auto max-h-[600px] custom-scrollbar">
                     <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-950/40 border-b border-slate-800">
+                        <thead className="sticky top-0 z-20 bg-slate-950/80 backdrop-blur-md">
+                            <tr className="border-b border-slate-800">
                                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                                     <div className="flex items-center gap-2">Customer <ArrowUpDown size={10} /></div>
                                 </th>
@@ -361,7 +361,7 @@ const RedemptionHistory: React.FC = () => {
                         Showing <span className="text-white">{redemptions.length}</span> of <span className="text-white">{totalCount}</span> records
                     </p>
                     <div className="flex items-center gap-2">
-                        <button 
+                        <button
                             onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
                             disabled={pageNumber === 1}
                             className="px-4 py-2 bg-slate-800 text-slate-400 rounded-xl font-bold text-xs uppercase hover:text-white transition-colors border border-slate-700 disabled:opacity-20"
@@ -370,20 +370,19 @@ const RedemptionHistory: React.FC = () => {
                         </button>
                         <div className="flex gap-1">
                             {[...Array(Math.ceil(totalCount / pageSize))].map((_, i) => (
-                                <button 
+                                <button
                                     key={i}
                                     onClick={() => setPageNumber(i + 1)}
-                                    className={`w-8 h-8 rounded-lg font-black text-xs transition-all ${
-                                        pageNumber === i + 1 
-                                        ? 'bg-primary text-white shadow-lg shadow-primary/20' 
-                                        : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
-                                    }`}
+                                    className={`w-8 h-8 rounded-lg font-black text-xs transition-all ${pageNumber === i + 1
+                                            ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                            : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                                        }`}
                                 >
                                     {i + 1}
                                 </button>
                             )).slice(Math.max(0, pageNumber - 3), Math.min(Math.ceil(totalCount / pageSize), pageNumber + 2))}
                         </div>
-                        <button 
+                        <button
                             onClick={() => setPageNumber(prev => Math.min(Math.ceil(totalCount / pageSize), prev + 1))}
                             disabled={pageNumber === Math.ceil(totalCount / pageSize) || totalCount === 0}
                             className="px-4 py-2 bg-slate-800 text-slate-400 rounded-xl font-bold text-xs uppercase hover:text-white transition-colors border border-slate-700 disabled:opacity-20"
